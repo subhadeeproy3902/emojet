@@ -663,5 +663,464 @@
     "sarcastic"
    ]
   }
+ ],
+ "chat_cases": [
+  {
+   "text": "Haga pacche",
+   "reply": null,
+   "ok_emojis": [
+    "🚽",
+    "💩",
+    "🧻",
+    "😖",
+    "😣",
+    "🏃"
+   ]
+  },
+  {
+   "text": "Ekdom",
+   "reply": null,
+   "ok_emojis": [
+    "💯",
+    "👌",
+    "✅",
+    "👍",
+    "🙌"
+   ]
+  },
+  {
+   "text": "Robot is perfect",
+   "reply": null,
+   "ok_emojis": [
+    "🤖",
+    "👌",
+    "💯",
+    "😍",
+    "🔥"
+   ]
+  },
+  {
+   "text": "Tor matha thik hoe geche",
+   "reply": null,
+   "ok_emojis": [
+    "🙄",
+    "🤦",
+    "😒",
+    "🤨",
+    "😂",
+    "🤪"
+   ]
+  },
+  {
+   "text": "Ami bhalo e achi bhai",
+   "reply": null,
+   "ok_emojis": [
+    "😊",
+    "🙂",
+    "😌",
+    "👍",
+    "🤷"
+   ]
+  },
+  {
+   "text": "bhai khub khide peyeche",
+   "reply": null,
+   "ok_emojis": [
+    "😋",
+    "🍔",
+    "🍕",
+    "🍛",
+    "🤤",
+    "😩"
+   ]
+  },
+  {
+   "text": "aaj ki gorom re baba",
+   "reply": null,
+   "ok_emojis": [
+    "🥵",
+    "☀",
+    "️",
+    "🔥",
+    "😓",
+    "😩"
+   ]
+  },
+  {
+   "text": "tor jonno onek miss korchi",
+   "reply": null,
+   "ok_emojis": [
+    "🥺",
+    "❤",
+    "️",
+    "😔",
+    "😢",
+    "💔"
+   ]
+  },
+  {
+   "text": "darun hoyeche re",
+   "reply": null,
+   "ok_emojis": [
+    "🔥",
+    "😍",
+    "👌",
+    "💯",
+    "👏"
+   ]
+  },
+  {
+   "text": "pagol naki tui",
+   "reply": null,
+   "ok_emojis": [
+    "😂",
+    "🤣",
+    "🙄",
+    "🤪",
+    "😜"
+   ]
+  },
+  {
+   "text": "ghum pacche khub",
+   "reply": null,
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱",
+    "😪",
+    "🛌"
+   ]
+  },
+  {
+   "text": "shuvo jonmodin bondhu",
+   "reply": null,
+   "ok_emojis": [
+    "🎂",
+    "🎉",
+    "🥳",
+    "🎁",
+    "❤",
+    "️",
+    "🎊"
+   ]
+  },
+  {
+   "text": "আমি তোমাকে ভালোবাসি",
+   "reply": null,
+   "ok_emojis": [
+    "❤",
+    "️",
+    "😘",
+    "🥰",
+    "😍",
+    "💕"
+   ]
+  },
+  {
+   "text": "কি হয়েছে তোর?",
+   "reply": null,
+   "ok_emojis": [
+    "🤔",
+    "😟",
+    "❓",
+    "😕",
+    "🥺"
+   ]
+  },
+  {
+   "text": "brishti porche baire",
+   "reply": null,
+   "ok_emojis": [
+    "🌧",
+    "️",
+    "☔",
+    "💧",
+    "⛈",
+    "️",
+    "🌦",
+    "️"
+   ]
+  },
+  {
+   "text": "ki obostha bhai",
+   "reply": null,
+   "ok_emojis": [
+    "😅",
+    "😂",
+    "🤣",
+    "🙄",
+    "😬"
+   ]
+  },
+  {
+   "text": "bhai party kab hai",
+   "reply": null,
+   "ok_emojis": [
+    "🎉",
+    "🥳",
+    "🍻",
+    "🕺",
+    "💃",
+    "🍾"
+   ]
+  },
+  {
+   "text": "yaar bahut bore ho raha hai",
+   "reply": null,
+   "ok_emojis": [
+    "😴",
+    "🥱",
+    "😑",
+    "😒",
+    "😩"
+   ]
+  },
+  {
+   "text": "mujhe bahut bhookh lagi hai",
+   "reply": null,
+   "ok_emojis": [
+    "😋",
+    "🍔",
+    "🍕",
+    "🤤",
+    "😩",
+    "🍛"
+   ]
+  },
+  {
+   "text": "kya baat hai bhai",
+   "reply": null,
+   "ok_emojis": [
+    "🔥",
+    "👏",
+    "💯",
+    "😎",
+    "🙌"
+   ]
+  },
+  {
+   "text": "chal nikal yaha se",
+   "reply": null,
+   "ok_emojis": [
+    "😂",
+    "🙄",
+    "🤣",
+    "😒",
+    "👋"
+   ]
+  },
+  {
+   "text": "happy diwali sabko",
+   "reply": null,
+   "ok_emojis": [
+    "🪔",
+    "🎆",
+    "🎇",
+    "✨",
+    "🎉",
+    "🙏"
+   ]
+  },
+  {
+   "text": "मैं बहुत खुश हूँ",
+   "reply": null,
+   "ok_emojis": [
+    "😊",
+    "😁",
+    "🥰",
+    "😄",
+    "🤩"
+   ]
+  },
+  {
+   "text": "aaj match dekha kya",
+   "reply": null,
+   "ok_emojis": [
+    "🏏",
+    "👀",
+    "🔥",
+    "😍",
+    "🇮",
+    "🇳"
+   ]
+  },
+  {
+   "text": "tu pagal hai kya",
+   "reply": null,
+   "ok_emojis": [
+    "😂",
+    "🤣",
+    "🙄",
+    "🤪",
+    "😜"
+   ]
+  },
+  {
+   "text": "kal exam hai aur kuch nahi padha",
+   "reply": null,
+   "ok_emojis": [
+    "😭",
+    "😩",
+    "📚",
+    "😰",
+    "🤦"
+   ]
+  },
+  {
+   "text": "I'm so tired today",
+   "reply": null,
+   "ok_emojis": [
+    "😴",
+    "😩",
+    "🥱",
+    "😪",
+    "💤"
+   ]
+  },
+  {
+   "text": "let's grab coffee tomorrow",
+   "reply": null,
+   "ok_emojis": [
+    "☕",
+    "😊",
+    "👍",
+    "🙌",
+    "☺",
+    "️"
+   ]
+  },
+  {
+   "text": "my laptop died again",
+   "reply": null,
+   "ok_emojis": [
+    "💻",
+    "😩",
+    "😭",
+    "🤦",
+    "😤"
+   ]
+  },
+  {
+   "text": "congrats on the new job!!",
+   "reply": null,
+   "ok_emojis": [
+    "🎉",
+    "🥳",
+    "👏",
+    "🎊",
+    "🙌"
+   ]
+  },
+  {
+   "text": "omg that's hilarious",
+   "reply": null,
+   "ok_emojis": [
+    "😂",
+    "🤣",
+    "💀",
+    "😆",
+    "😹"
+   ]
+  },
+  {
+   "text": "going to the gym now",
+   "reply": null,
+   "ok_emojis": [
+    "💪",
+    "🏋",
+    "️",
+    "🏃",
+    "🔥",
+    "😤"
+   ]
+  },
+  {
+   "text": "can't wait for the weekend",
+   "reply": null,
+   "ok_emojis": [
+    "🥳",
+    "🙌",
+    "😎",
+    "🎉",
+    "🤩"
+   ]
+  },
+  {
+   "text": "rip my sleep schedule",
+   "reply": null,
+   "ok_emojis": [
+    "😭",
+    "💀",
+    "😴",
+    "🥲",
+    "😩"
+   ]
+  },
+  {
+   "text": "just finished my first marathon",
+   "reply": null,
+   "ok_emojis": [
+    "🏃",
+    "🏅",
+    "🎉",
+    "💪",
+    "🥳"
+   ]
+  },
+  {
+   "text": "feeling sick today",
+   "reply": null,
+   "ok_emojis": [
+    "🤒",
+    "😷",
+    "🤧",
+    "😩",
+    "🥺"
+   ]
+  },
+  {
+   "text": "good night everyone",
+   "reply": null,
+   "ok_emojis": [
+    "🌙",
+    "😴",
+    "💤",
+    "✨",
+    "😊"
+   ]
+  },
+  {
+   "text": "same",
+   "reply": "I have so much homework tonight",
+   "ok_emojis": [
+    "😭",
+    "😩",
+    "😂",
+    "💀",
+    "🥲"
+   ]
+  },
+  {
+   "text": "congrats bro",
+   "reply": "I finally got the job!!",
+   "ok_emojis": [
+    "🎉",
+    "🥳",
+    "👏",
+    "🎊",
+    "🙌"
+   ]
+  },
+  {
+   "text": "ki bolchis",
+   "reply": "ami biye korchi next month",
+   "ok_emojis": [
+    "😮",
+    "😳",
+    "🤯",
+    "😲",
+    "🙄"
+   ]
+  }
  ]
 }

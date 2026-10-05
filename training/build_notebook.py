@@ -12,7 +12,8 @@ COMMIT = sys.argv[1] if len(sys.argv) > 1 else "main"
 SMOKE = "--smoke" in sys.argv
 MINI = "--mini" in sys.argv     # distil Emojet-v1 into a half-depth student
 RESUME = "--resume" in sys.argv # continue training Emojet-v1 for one epoch (adds chat-object data)
-V2 = "--v2" in sys.argv         # Emojet-v2: from final v1, topic-in-chat data, balanced emoji loss
+V2 = "--v2" in sys.argv         # Emojet-v2 (pre): from final v1, topic-in-chat data, balanced emoji loss
+REAL = "--real" in sys.argv     # Emojet-v2: from v2-pre + real messages (EN/HI/BN) from the emojet-data kernel
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
 
 import base64 as _b64, gzip as _gz
@@ -57,19 +58,21 @@ LLAMA_CPP_COMMIT = "{LLAMA_CPP_COMMIT}"
 SMOKE = {SMOKE}                                            # True = quick end-to-end test on 4,000 examples
 MINI = {MINI}                                              # True = distil Emojet-v1 into Emojet-v1-mini
 RESUME = {RESUME}                                          # True = continue Emojet-v1 for one epoch
-V2 = {V2}                                                  # True = train Emojet-v2 from the final v1
+V2 = {V2}                                                  # True = train Emojet-v2 (pre) from the final v1
+REAL = {REAL}                                              # True = Emojet-v2 on real messages, from v2-pre
+if REAL: V2 = True                                         # keeps the v2 data (topic-in-chat) and loss
 NAME = "emojet-v1-mini" if MINI else ("emojet-v2" if V2 else "emojet-v1")
-BALANCE_TAU = 0.6 if V2 else 0.0                           # balanced softmax: frequent emojis stop crowding out specific ones
+BALANCE_TAU = 0.5 if REAL else (0.6 if V2 else 0.0)        # balanced softmax: frequent emojis stop crowding out specific ones
 KEEP = [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25]  # teacher layers kept (every 3rd = global attention, pattern preserved)
 KD_T, KD_W, SUP_W = 2.0, 1.0, 0.5
-MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if (SMOKE or RESUME) else (2 if (MINI or V2) else 3))
+MAX_LEN, BATCH, EPOCHS = (256 if REAL else 64), 64, (1 if (SMOKE or RESUME) else (2 if (MINI or V2) else 3))
+LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
 if V2:
     LR_ENCODER, LR_HEAD, WARMUP = 2e-5, 1.5e-4, 0.03
 if RESUME:
     LR_ENCODER, LR_HEAD, WARMUP = 1.5e-5, 1e-4, 0.03
-LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
 TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
-TIME_BUDGET_H = 7.0                                        # stop training early if a run gets this long
+TIME_BUDGET_H = 10.3 if REAL else 7.0                      # Kaggle stops a session at 12 h; the LR schedule is fitted to this
 SEED = 42
 # The exact text the model sees. Apps must build the same string (shared/laya-emoji.json).
 def fmt(draft, reply=None):
@@ -156,7 +159,7 @@ ex = []          # dict(text, reply, emo, tones, style, dims, src)
 def add(text, src, reply=None, emo=None, tones=None, style=None, dims=None):
     text = strip_emojis(text)
     if text:
-        ex.append(dict(text=text[:600], reply=strip_emojis(reply)[:300] if reply else None, emo=emo or None,
+        ex.append(dict(text=text[:1200], reply=strip_emojis(reply)[:300] if reply else None, emo=emo or None,
                        tones=tones or None, style=style, dims=dims or None, src=src))
 
 # emojinize: sentences (all emojis of their spans) + a sample of spans on their own
@@ -288,6 +291,32 @@ if V2:
         add(x["text"], "chat-objects", emo=x["emo"])           # double the chat-object examples
     print("v2 topic-in-chat examples:", len(ex) - n0)
 
+# real messages (emojet-data kernel): what people actually typed, the emojis they used are the labels
+real_test = []
+if REAL:
+    import glob, gzip as _gzip
+    rdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True))[0])
+    n0 = len(ex)
+    real_rows = [json.loads(l) for l in _gzip.open(f"{rdir}/train.jsonl.gz", "rt", encoding="utf-8")]
+    real_test = [json.loads(l) for l in _gzip.open(f"{rdir}/test.jsonl.gz", "rt", encoding="utf-8")]
+    for r in real_rows:
+        for _ in range(2 if r["l"] == "bn" else 1):        # Bengali is the scarcest language: seen twice
+            ex.append(dict(text=r["t"], reply=None, emo=r["e"], tones=None, style=None, dims=None, src="real-" + r["l"]))
+    # long drafts: 2-6 real messages of one language in a row; the last one counts most (it's what is being sent)
+    by_lang = {}
+    for r in real_rows:
+        by_lang.setdefault(r["l"], []).append(r)
+    for _ in range(80_000):
+        lang = random.choice(["en", "hi", "bn"])
+        if not by_lang.get(lang): continue
+        parts = random.sample(by_lang[lang], random.randint(2, 6))
+        emo = []
+        for r in reversed(parts):
+            emo += [i for i in r["e"] if i not in emo]
+        ex.append(dict(text=" ".join(r["t"] for r in parts)[:1200], reply=None, emo=emo[:6], tones=None, style=None,
+                       dims=None, src="real-long"))
+    print(f"real examples: {len(ex) - n0:,} (test held out: {len(real_test):,})")
+
 # seeds (x25 with light variations)
 def seed_targets(s):
     # hand-written: tones not listed are absent -> every tone gets negative examples too
@@ -305,7 +334,7 @@ for s in seeds:
 # synthetic replies: an uninformative draft takes its emojis from the replied-to message
 GENERIC = ["same", "same here", "true", "fr", "exactly", "yes!!", "omg", "wow", "haha", "lol", "hahaha", "no way",
            "really?", "nice", "sahi hai", "ekdom", "haan", "accha", "seriously?", "ikr", "damn", "yesss", "sotti?", "uff"]
-pool = [x for x in ex if x["src"] in ("goemotions", "seeds", "emojinize") and x["emo"] and len(x["text"]) < 160]
+pool = [x for x in ex if x["src"] in ("goemotions", "seeds", "emojinize", "real-en", "real-hi", "real-bn") and x["emo"] and len(x["text"]) < 160]
 for x in random.sample(pool, 15_000):
     add(random.choice(GENERIC), "reply-synth", reply=x["text"], emo=x["emo"], tones=x["tones"])
 for x in random.sample(pool, 5_000):       # informative draft + unrelated reply: the draft wins
@@ -351,7 +380,7 @@ if RESUME or V2:
     import glob
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
     model = ModernBertForSequenceClassification.from_pretrained(tdir, torch_dtype=torch.float32)
-    print(f"starting from Emojet-v1 at {tdir}")
+    print(f"starting from {json.load(open(tdir + '/emojet.json')).get('name', 'Emojet')} at {tdir}")
 if MINI:
     import glob, copy
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
@@ -396,13 +425,22 @@ for x in ex:
 LOG_PRIOR = torch.tensor(np.log(_cnt / _cnt.sum()), dtype=torch.float32, device="cuda")
 print("most frequent emojis:", "".join(EMOJIS[i] for i in np.argsort(-_cnt)[:20]))
 
+MAX_TOKENS = 5120 if MAX_LEN > 64 else None
 def make_batches(n, bs, rng):
     order = rng.permutation(n)
     chunks = [order[i:i + bs * 50] for i in range(0, n, bs * 50)]
     batches = []
     for ch in chunks:
         ch = sorted(ch, key=lambda j: len(ids_all[j]))
-        batches += [ch[i:i + bs] for i in range(0, len(ch), bs)]
+        if MAX_TOKENS is None:
+            batches += [ch[i:i + bs] for i in range(0, len(ch), bs)]
+            continue
+        cur = []                                 # long texts: fewer per batch, so a batch never exceeds MAX_TOKENS
+        for j in ch:
+            if cur and (len(cur) == bs or (len(cur) + 1) * len(ids_all[j]) > MAX_TOKENS):
+                batches.append(cur); cur = []
+            cur.append(j)
+        if cur: batches.append(cur)
     rng.shuffle(batches)
     return batches
 
@@ -500,6 +538,23 @@ def evaluate(verbose=False):
     gt = [x for x in ge["test"].select(range(2000)) if 27 not in x["labels"]]
     lg = predict([x["text"] for x in gt])
     r["goemotions_emoji_hit@6"] = round(float(np.mean([bool(set(row[:NE].topk(6).indices.tolist()) & set(ge_targets(x["labels"])[1])) for x, row in zip(gt, lg)])), 3)
+    if real_test:
+        for lang in ("en", "hi", "bn"):
+            rt = [x for x in real_test if x["l"] == lang]
+            if not rt: continue
+            lg = predict([x["t"] for x in rt])
+            top6 = [row[:NE].topk(6).indices.tolist() for row in lg]
+            r[f"real_{lang}_top1"] = round(float(np.mean([t[0] in x["e"] for t, x in zip(top6, rt)])), 3)
+            r[f"real_{lang}_hit@6"] = round(float(np.mean([bool(set(t) & set(x["e"])) for t, x in zip(top6, rt)])), 3)
+    cc = evals.get("chat_cases", [])
+    if cc:
+        lg = predict([c["text"] for c in cc], [c.get("reply") for c in cc])
+        h1 = h3 = 0
+        for c, row in zip(cc, lg):
+            top = top_emojis(row); ok = {norm(e) for e in c["ok_emojis"]}
+            h1 += norm(top[0]) in ok; h3 += any(norm(e) in ok for e in top[:3])
+            if verbose: print(f"{'✓' if any(norm(e) in ok for e in top[:3]) else '✗'} {''.join(top)}   {c['text'][:60]}")
+        r["chat_cases_top1"] = f"{h1}/{len(cc)}"; r["chat_cases_top3"] = f"{h3}/{len(cc)}"
     lg = predict([str(t) for t in sarc_test["cm_headline"]])
     r["hinglish_sarcasm_acc"] = round(float(np.mean([(torch.sigmoid(row[OFF_T + SARC]) > 0.5).item() == bool(y) for row, y in zip(lg, sarc_test["is_sarcastic"])])), 3)
     return r
@@ -511,10 +566,11 @@ head_params = [p for n, p in model.named_parameters() if not n.startswith("model
 enc_params = [p for n, p in model.named_parameters() if n.startswith("model.")]
 opt = torch.optim.AdamW([{"params": enc_params, "lr": LR_ENCODER}, {"params": head_params, "lr": LR_HEAD}], weight_decay=0.01)
 rng = np.random.RandomState(SEED)
-steps_per_epoch = math.ceil(len(ex) / BATCH)
+steps_per_epoch = len(make_batches(len(ex), BATCH, np.random.RandomState(0)))
 total_steps = steps_per_epoch * EPOCHS
 warm = int(WARMUP * total_steps)
 sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, warm)) * max(0.0, (total_steps - s) / max(1, total_steps - warm)))
+FIT_AT = 300      # after this many steps: if the run would not finish in time, shorten it so the LR still decays to 0
 scaler = torch.amp.GradScaler("cuda")
 history, step, t_train = [], 0, time.time()
 print(f"{len(ex):,} examples, {steps_per_epoch:,} steps/epoch, {EPOCHS} epochs")
@@ -543,6 +599,15 @@ for epoch in range(EPOCHS):
         scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         scaler.step(opt); scaler.update(); sched.step(); step += 1
         for k, v in parts.items(): run[k] += v; cnt[k] += 1
+        if step == FIT_AT:
+            per_step = (time.time() - t_train) / FIT_AT
+            left_h = TIME_BUDGET_H - (time.time() - T_START) / 3600 - 0.25       # 15 min for evaluation + saving
+            fit = int(left_h * 3600 / per_step) + FIT_AT
+            if fit < total_steps:
+                print(f"fitting the run to the time budget: {total_steps:,} -> {fit:,} steps ({fit / steps_per_epoch:.2f} epochs)")
+                total_steps = fit
+        if step >= total_steps:
+            stop = True; break
         if step % 500 == 0:
             avg = {k: round(run[k] / cnt[k], 4) for k in run}
             history.append(dict(step=step, epoch=epoch, **avg))
@@ -622,6 +687,6 @@ print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                                    "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v2" if V2 else ("emojet_v1_resume" if RESUME else "emojet_v1"))) + ("_smoke" if SMOKE else "") + ".ipynb")
+out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v2_real" if REAL else "emojet_v2" if V2 else ("emojet_v1_resume" if RESUME else "emojet_v1"))) + ("_smoke" if SMOKE else "") + ".ipynb")
 out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")

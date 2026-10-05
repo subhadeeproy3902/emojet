@@ -2,7 +2,8 @@
 """Tiny Kaggle API client (stdlib only). Reads KAGGLE_API_TOKEN / KAGGLE_USERNAME from .env.
 
   python3 scripts/kaggle.py push training/kaggle/laya_check.py emojet-laya-check [--gpu] [--internet] [--public]
-  (a .ipynb file is pushed as a notebook, anything else as a script)
+  (a .ipynb file is pushed as a notebook, anything else as a script; --source=user/kernel and
+  --dataset=user/dataset attach inputs under /kaggle/input)
   python3 scripts/kaggle.py status emojet-laya-check
   python3 scripts/kaggle.py wait   emojet-laya-check          # polls until done, then fetches output
   python3 scripts/kaggle.py output emojet-laya-check [dest] [--only=reference --only=.json]   # log + output files -> data/kaggle/<slug>/
@@ -46,7 +47,7 @@ def call(method, body):
         sys.exit(f"Kaggle API {method}: HTTP {e.code} {e.read()[:300].decode(errors='replace')}")
 
 
-def push(path, slug, gpu, internet, public, sources=()):
+def push(path, slug, gpu, internet, public, sources=(), datasets=()):
     res = call("SaveKernel", {
         "slug": f"{USER}/{slug}",
         "newTitle": slug,
@@ -57,7 +58,7 @@ def push(path, slug, gpu, internet, public, sources=()):
         "enableGpu": gpu,
         "enableInternet": internet,
         "machineShape": "NvidiaTeslaT4" if gpu else None,
-        "datasetDataSources": [], "kernelDataSources": list(sources), "competitionDataSources": [],
+        "datasetDataSources": list(datasets), "kernelDataSources": list(sources), "competitionDataSources": [],
         "modelDataSources": [], "categoryIds": [],
     })
     if res.get("error"):
@@ -120,7 +121,8 @@ def main():
     pos = [a for a in args if not a.startswith("--")]
     if cmd == "push":
         push(pos[0], pos[1], "--gpu" in flags, "--internet" in flags, "--public" in flags,
-             [a.split("=", 1)[1] for a in args if a.startswith("--source=")])
+             [a.split("=", 1)[1] for a in args if a.startswith("--source=")],
+             [a.split("=", 1)[1] for a in args if a.startswith("--dataset=")])
     elif cmd == "status":
         print(*status(pos[0]))
     elif cmd == "output":

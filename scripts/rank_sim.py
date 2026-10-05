@@ -93,6 +93,13 @@ def main():
             ok = {norm(x) for x in c["ok_emojis"]}
             hits += any(norm(EMOJIS[i]) in ok for i in top)
         print(f"{name:7s} emoji cases hit@6: {hits}/{len(sets['emoji_cases'])}  ({(time.time() - t0) / len(sets['emoji_cases']) * 1000:.0f} ms each)")
+        h1 = h3 = 0
+        for c in sets.get("chat_cases", []):
+            top, _ = fn(c["text"], c["reply"])
+            ok = {norm(x) for x in c["ok_emojis"]}
+            h1 += norm(EMOJIS[top[0]]) in ok
+            h3 += any(norm(EMOJIS[i]) in ok for i in top[:3])
+        print(f"{name:7s} chat cases top-1: {h1}/{len(sets.get('chat_cases', []))}  top-3: {h3}/{len(sets.get('chat_cases', []))}")
     print()
     probes = [("Program", None), ("Laptop", None), ("code", None), ("I'm writing code all night", None),
               ("my program finally works", None), ("debugging this bug for hours", None), ("need a new laptop", None),
