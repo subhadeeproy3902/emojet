@@ -317,6 +317,19 @@ if REAL:
                        dims=None, src="real-long"))
     print(f"real examples: {len(ex) - n0:,} (test held out: {len(real_test):,})")
 
+# human-labelled tone/style datasets (emojet-tones kernel): sarcasm, condescension, manipulation, aggression, empathy,
+# emotions, politeness, dialogue acts, negotiation/support strategies (EN/HI/BN) + real WhatsApp messages with emojis
+if REAL:
+    n0 = len(ex)
+    for path in sorted(glob.glob("/kaggle/input/**/tones/tones.jsonl.gz", recursive=True)):
+        for line in _gzip.open(path, "rt", encoding="utf-8"):
+            r = json.loads(line)
+            tones = {TONE_IDX[t]: v for t, v in r["tones"].items() if t in TONE_IDX}
+            for _ in range(2 if r["l"] in ("bn", "hi") else 1):       # Hindi/Bengali labels are rare: seen twice
+                ex.append(dict(text=r["t"], reply=r.get("r"), emo=r.get("e") or None, tones=tones or None,
+                               style=STYLE_IDX.get(r.get("style")), dims=None, src="tones-" + r["s"]))
+    print(f"human-labelled tone/style examples: {len(ex) - n0:,}")
+
 # annotated real messages (emojet-annotate kernel): full-taxonomy tones, style, sliders; emojis the writer would add
 if REAL:
     ann_files = sorted(glob.glob("/kaggle/input/**/annot/annotations.jsonl", recursive=True))
