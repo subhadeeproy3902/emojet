@@ -67,9 +67,24 @@ log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.ite
 if not os.path.exists("/tmp/llama.cpp/build/bin/llama-server"):
     subprocess.run(f"git clone -q https://github.com/ggml-org/llama.cpp /tmp/llama.cpp && cd /tmp/llama.cpp && "
                    f"git checkout -q {LLAMA_CPP_COMMIT}", shell=True, check=True)
-    subprocess.run("cd /tmp/llama.cpp && cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DLLAMA_CURL=OFF "
-                   "-DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release > /tmp/cmake.log 2>&1 && "
-                   "cmake --build build --target llama-server -j 4 > /tmp/build.log 2>&1", shell=True, check=True)
+    nvcc = next((p for p in ("/usr/local/cuda/bin/nvcc", "/usr/bin/nvcc") if os.path.exists(p)), "nvcc")
+    subprocess.run("nvidia-smi; " + nvcc + " --version; cmake --version", shell=True)
+    # Kaggle's CUDA image has no libcuda.so where CMake looks: point it at the stub or the driver library
+    libcuda = next((p for pat in ("/usr/local/cuda/lib64/stubs/libcuda.so", "/usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so",
+                                  "/usr/lib/x86_64-linux-gnu/libcuda.so", "/usr/lib/x86_64-linux-gnu/libcuda.so.1",
+                                  "/usr/local/nvidia/lib64/libcuda.so.1", "/usr/lib64/libcuda.so.1")
+                    for p in glob.glob(pat)), None)
+    print("libcuda:", libcuda, flush=True)
+    res = subprocess.run(f"cd /tmp/llama.cpp && cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 "
+                         f"-DCMAKE_CUDA_COMPILER={nvcc} {'-DCUDA_cuda_driver_LIBRARY=' + libcuda if libcuda else ''} -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF "
+                         f"-DCMAKE_BUILD_TYPE=Release > /tmp/cmake.log 2>&1 && "
+                         f"cmake --build build --target llama-server -j 4 > /tmp/build.log 2>&1", shell=True)
+    if res.returncode:
+        for f in ("/tmp/cmake.log", "/tmp/build.log"):
+            if os.path.exists(f):
+                txt = open(f, errors="replace").read()
+                print(f"==== {f}\n" + "\n".join(l for l in txt.splitlines() if "rror" in l or "fatal" in l)[-3000:] + "\n" + txt[-1500:])
+        raise SystemExit("llama.cpp build failed")
 log("llama-server built")
 from huggingface_hub import hf_hub_download  # noqa: E402
 model_path = hf_hub_download(MODEL_REPO, MODEL_FILE, local_dir="/tmp/model")
