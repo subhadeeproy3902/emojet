@@ -1,5 +1,7 @@
 # Emojet
 
+> **Release plan:** Emojet will be published at https://huggingface.co/subhadeeproy3902/emojet. The first public version (v1) is the model trained on real messages (internal "v2"); see [docs/RELEASE.md](docs/RELEASE.md). Nothing is published yet.
+
 **Emojet** reads a whole chat message — and the message it replies to — and, in **one forward pass**, scores **every emoji in Unicode 18.0** plus the **tone of voice** it's written in. It runs fully offline on phones and laptops.
 
 It is a fine-tune of [Laya](https://huggingface.co/convaiinnovations/laya) (Apache-2.0), the open decision model built on ModernBERT-large. The app that uses it is [EmoJet AI](https://github.com/subhadeeproy3902/emojet-ai) — emoji suggestions over any Android app.
