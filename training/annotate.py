@@ -45,6 +45,24 @@ STYLES = list(TAX["styles"]["options"])
 AXES = [k for k in TAX["dimensions"] if k != "note"]
 EMOJIS = TAX["emojis"]
 
+# ---------------------------------------------------------------- messages
+random.seed(7)
+rdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True))[0])
+pool = {"en": [], "hi": [], "bn": []}
+for name in ("train.jsonl.gz", "plain.jsonl.gz"):
+    path = os.path.join(rdir, name)
+    if os.path.exists(path):
+        for line in gzip.open(path, "rt", encoding="utf-8"):
+            r = json.loads(line)
+            if r["l"] in pool and 3 <= len(r["t"]) <= 500:
+                pool[r["l"]].append(r)
+msgs = []
+for lang, rows in pool.items():
+    random.shuffle(rows)
+    msgs += rows[:PER_LANG[lang]]
+random.shuffle(msgs)
+log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.items()})
+
 # ---------------------------------------------------------------- engine
 if not os.path.exists("/tmp/llama.cpp/build/bin/llama-server"):
     subprocess.run(f"git clone -q https://github.com/ggml-org/llama.cpp /tmp/llama.cpp && cd /tmp/llama.cpp && "
@@ -133,24 +151,6 @@ def ask(batch):
             res.append({**batch[k], "tones": it["tones"], "style": it["style"], "axes": it["axes"], "emojis": it["emojis"]})
     return res
 
-
-# ---------------------------------------------------------------- messages
-random.seed(7)
-rdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True))[0])
-pool = {"en": [], "hi": [], "bn": []}
-for name in ("train.jsonl.gz", "plain.jsonl.gz"):
-    path = os.path.join(rdir, name)
-    if os.path.exists(path):
-        for line in gzip.open(path, "rt", encoding="utf-8"):
-            r = json.loads(line)
-            if r["l"] in pool and 3 <= len(r["t"]) <= 500:
-                pool[r["l"]].append(r)
-msgs = []
-for lang, rows in pool.items():
-    random.shuffle(rows)
-    msgs += rows[:PER_LANG[lang]]
-random.shuffle(msgs)
-log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.items()})
 
 # ---------------------------------------------------------------- run
 lock = threading.Lock()

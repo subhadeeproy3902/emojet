@@ -254,8 +254,9 @@ def hate_measure():
 
 
 def politeness():
-    for split in ("train", "test"):
-        for r in capped(hf("Cleanlab/stanford-politeness", split=split), None):
+    base = "https://huggingface.co/datasets/Cleanlab/stanford-politeness/resolve/main/fine-tuning/"
+    for fname in ("train.csv", "test.csv"):           # the repo mixes CSV layouts: read these two files directly
+        for r in capped(csv.DictReader(io.StringIO(fetch(base + fname).decode("utf-8", "replace"))), None):
             q = r["prompt"].replace("Question:", "").strip()
             lab = r["completion"].strip()
             if lab == "polite":
@@ -333,12 +334,8 @@ def hindi_sarcasm():
 def hinglish_sarcasm():
     base = f"{GH}/sahilswami96/SarcasmDetection_CodeMixed/master/Dataset/"
     tw = fetch(base + "Sarcasm_tweets.txt").decode("utf-8", "replace").split("\n\n")
-    truth = fetch(base + "Sarcasm_tweet_truth.txt").decode("utf-8", "replace").split("\n\n")
-    labels = {}
-    for block in truth:
-        p = block.strip().split("\n")
-        if len(p) == 2:
-            labels[p[0].strip()] = p[1].strip()
+    truth = [l.strip() for l in fetch(base + "Sarcasm_tweet_truth.txt").decode("utf-8", "replace").splitlines() if l.strip()]
+    labels = dict(zip(truth[0::2], truth[1::2]))      # id line, YES/NO line
     for block in capped(tw, None):
         p = block.strip().split("\n", 1)
         if len(p) == 2 and p[0].strip() in labels:
@@ -361,11 +358,14 @@ def text_col(r, cols):
 
 
 def ben_sarc():
-    def one(r, cols):
-        lab = next((r[c] for c in cols if c and re.search(r"polarity|label|class|sarc", c, re.I) and str(r[c]).strip() in ("0", "1")), None)
-        if lab is not None:
-            add("ben_sarc", text_col(r, cols), "bn", {"sarcastic": float(lab == "1")})
-    kaggle_csv(r"sarc", "ben_sarc", "bn", one)
+    import pandas as pd
+    for path in glob.glob("/kaggle/input/**/*Ben-Sarc*.xlsx", recursive=True):
+        df = pd.read_excel(path)
+        log("  ben_sarc columns", list(df.columns))
+        lab = next(c for c in df.columns if re.search(r"polarity|label|class|sarc", str(c), re.I) and set(df[c].dropna().astype(int).unique()) <= {0, 1})
+        txt = max((c for c in df.columns if c != lab and df[c].dtype == object), key=lambda c: df[c].astype(str).str.len().mean())
+        for _, r in capped(df.iterrows(), None):
+            add("ben_sarc", r[txt], "bn", {"sarcastic": float(int(r[lab]) == 1)})
 
 
 def bengali_humor():
