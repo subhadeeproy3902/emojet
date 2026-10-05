@@ -21,7 +21,7 @@ echo "model: $MODEL" >&2
 
 # Laya-Emoji is a classifier: llama-server returns its 1,977 scores from /embedding.
 EXTRA=()
-if [[ "$(basename "$MODEL" | tr 'A-Z' 'a-z')" == *emoji* ]]; then
+if [[ "$(basename "$MODEL" | tr 'A-Z' 'a-z')" == *emoji* || "$(basename "$MODEL" | tr 'A-Z' 'a-z')" == *emojet* ]]; then
   EXTRA=(--embedding --pooling rank)
 fi
 

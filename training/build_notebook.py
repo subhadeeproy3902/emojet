@@ -310,6 +310,8 @@ if MINI:
         prm.requires_grad_(False)
     scfg = copy.deepcopy(teacher.config)
     scfg.num_hidden_layers = len(KEEP)
+    if getattr(scfg, "layer_types", None):           # newer transformers validate one type per layer
+        scfg.layer_types = [teacher.config.layer_types[k] for k in KEEP]
     model = ModernBertForSequenceClassification(scfg)
     tsd = {k: v.float() for k, v in teacher.state_dict().items()}
     ssd = {}
