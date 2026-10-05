@@ -72,13 +72,14 @@ if V2:
 if RESUME:
     LR_ENCODER, LR_HEAD, WARMUP = 1.5e-5, 1e-4, 0.03
 TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
-TIME_BUDGET_H = 10.3 if REAL else 7.0                      # Kaggle stops a session at 12 h; the LR schedule is fitted to this
+TIME_BUDGET_H = 10.0 if REAL else 7.0                      # Kaggle stops a session at 12 h; the LR schedule is fitted to this
 SEED = 42
 # The exact text the model sees. Apps must build the same string (shared/laya-emoji.json).
 def fmt(draft, reply=None):
     return (f"replying to: {{reply.strip()}}\\n" if reply else "") + f"my message: {{draft.strip()}}"
 
 import json, math, os, random, re, subprocess, sys, time, urllib.request
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")   # less fragmentation (set before torch)
 import numpy as np, torch, torch.nn.functional as F
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
 import transformers, datasets
@@ -487,7 +488,7 @@ for x in ex:
 LOG_PRIOR = torch.tensor(np.log(_cnt / _cnt.sum()), dtype=torch.float32, device="cuda")
 print("most frequent emojis:", "".join(EMOJIS[i] for i in np.argsort(-_cnt)[:20]))
 
-MAX_TOKENS = 5120 if MAX_LEN > 64 else None
+MAX_TOKENS = 3584 if MAX_LEN > 64 else None          # 5120 ran out of memory on a T4 (15 GB) with 256-token texts
 def make_batches(n, bs, rng):
     order = rng.permutation(n)
     chunks = [order[i:i + bs * 50] for i in range(0, n, bs * 50)]
@@ -642,7 +643,11 @@ model.train()
 stop = False
 for epoch in range(EPOCHS):
     run = Counter(); cnt = Counter()
-    for bi, idx in enumerate(make_batches(len(ex), BATCH, rng)):
+    batches = make_batches(len(ex), BATCH, rng)
+    if epoch == 0:          # the biggest batch first: if memory is too tight, fail in the first minute, not hours in
+        big = max(range(len(batches)), key=lambda i: len(batches[i]) * max(len(ids_all[j]) for j in batches[i]))
+        batches.insert(0, batches.pop(big))
+    for bi, idx in enumerate(batches):
         b = {k: v.cuda(non_blocking=True) for k, v in collate(idx).items()}
         with torch.autocast("cuda", dtype=torch.float16):
             logits = model(input_ids=b["inp"], attention_mask=b["att"]).logits
