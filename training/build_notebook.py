@@ -12,6 +12,7 @@ COMMIT = sys.argv[1] if len(sys.argv) > 1 else "main"
 SMOKE = "--smoke" in sys.argv
 MINI = "--mini" in sys.argv     # distil Emojet-v1 into a half-depth student
 RESUME = "--resume" in sys.argv # continue training Emojet-v1 for one epoch (adds chat-object data)
+V2 = "--v2" in sys.argv         # Emojet-v2: from final v1, topic-in-chat data, balanced emoji loss
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
 
 import base64 as _b64, gzip as _gz
@@ -31,7 +32,7 @@ def code(text):
 
 
 md(f"""
-# Emojet — training **{"Emojet-v1-mini (distilled)" if MINI else ("Emojet-v1, continued with chat-object data" if RESUME else "Emojet-v1")}**
+# Emojet — training **{"Emojet-v1-mini (distilled)" if MINI else ("Emojet-v2 (from v1, topic-in-chat data, balanced loss)" if V2 else ("Emojet-v1, continued with chat-object data" if RESUME else "Emojet-v1"))}**
 
 Fine-tunes [Laya](https://huggingface.co/convaiinnovations/laya)'s encoder (ModernBERT-large, 28 layers, Apache-2.0) into one model that reads a **whole message** (plus the message being replied to) and outputs, in a single pass:
 
@@ -56,10 +57,14 @@ LLAMA_CPP_COMMIT = "{LLAMA_CPP_COMMIT}"
 SMOKE = {SMOKE}                                            # True = quick end-to-end test on 4,000 examples
 MINI = {MINI}                                              # True = distil Emojet-v1 into Emojet-v1-mini
 RESUME = {RESUME}                                          # True = continue Emojet-v1 for one epoch
-NAME = "emojet-v1-mini" if MINI else "emojet-v1"
+V2 = {V2}                                                  # True = train Emojet-v2 from the final v1
+NAME = "emojet-v1-mini" if MINI else ("emojet-v2" if V2 else "emojet-v1")
+BALANCE_TAU = 0.6 if V2 else 0.0                           # balanced softmax: frequent emojis stop crowding out specific ones
 KEEP = [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25]  # teacher layers kept (every 3rd = global attention, pattern preserved)
 KD_T, KD_W, SUP_W = 2.0, 1.0, 0.5
-MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if (SMOKE or RESUME) else (2 if MINI else 3))
+MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if (SMOKE or RESUME) else (2 if (MINI or V2) else 3))
+if V2:
+    LR_ENCODER, LR_HEAD, WARMUP = 2e-5, 1.5e-4, 0.03
 if RESUME:
     LR_ENCODER, LR_HEAD, WARMUP = 1.5e-5, 1e-4, 0.03
 LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
@@ -270,6 +275,19 @@ for i, e in enumerate(catalog):
             add(tpl.format(x=country), "chat-objects", emo=[i] + emoji_ids(feel))
 print("chat-object examples:", len(ex) - n0)
 
+# v2: real topic words (emojinize spans) wrapped in casual chat, so a topic keeps its emoji inside emotional sentences
+if V2:
+    CHAT_WRAP = ["{s} lol", "omg {s}", "bro {s} again", "talking about {s} rn", "can't stop thinking about {s}", "{s} tonight?",
+                 "just saw {s}", "ugh {s}", "{s} is so good", "why is {s} like this", "kal {s} hai", "aaj {s} ka scene",
+                 "bhai {s}", "ami {s} niye bhabchi", "finally {s}!!", "no more {s} please", "all day {s}", "{s} vibes",
+                 "I'm into {s} these days", "need {s} asap", "{s} again lmao", "help, {s}", "who else loves {s}", "{s} > everything"]
+    n0 = len(ex)
+    for t, ids in span_pool[90_000:240_000]:
+        add(random.choice(CHAT_WRAP).format(s=t.strip()), "topic-chat", emo=ids)
+    for x in [x for x in ex if x["src"] == "chat-objects"]:
+        add(x["text"], "chat-objects", emo=x["emo"])           # double the chat-object examples
+    print("v2 topic-in-chat examples:", len(ex) - n0)
+
 # seeds (x25 with light variations)
 def seed_targets(s):
     # hand-written: tones not listed are absent -> every tone gets negative examples too
@@ -329,11 +347,11 @@ res = model.model.load_state_dict({k[8:]: v for k, v in sd.items() if k.startswi
 assert not res.missing_keys and not res.unexpected_keys, res
 del sd
 teacher = None
-if RESUME:
+if RESUME or V2:
     import glob
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
     model = ModernBertForSequenceClassification.from_pretrained(tdir, torch_dtype=torch.float32)
-    print(f"continuing Emojet-v1 from {tdir}")
+    print(f"starting from Emojet-v1 at {tdir}")
 if MINI:
     import glob, copy
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
@@ -370,6 +388,14 @@ for i in range(0, len(ex), 20_000):
     ids_all += encode(ex[i:i + 20_000])
 print(f"tokenized in {time.time() - t0:.0f} s; median length {int(np.median([len(i) for i in ids_all]))} tokens")
 
+# emoji label frequencies (for the balanced loss)
+_cnt = np.ones(NE)
+for x in ex:
+    for i in (x["emo"] or []):
+        _cnt[i] += 1.0 / len(x["emo"])
+LOG_PRIOR = torch.tensor(np.log(_cnt / _cnt.sum()), dtype=torch.float32, device="cuda")
+print("most frequent emojis:", "".join(EMOJIS[i] for i in np.argsort(-_cnt)[:20]))
+
 def make_batches(n, bs, rng):
     order = rng.permutation(n)
     chunks = [order[i:i + bs * 50] for i in range(0, n, bs * 50)]
@@ -405,7 +431,10 @@ def collate(idx):
 def loss_fn(logits, b):
     l = logits.float(); parts = {}; total = 0.0
     if b["emo_m"].any():   # several right emojis per message: soft-target cross-entropy over all 1,923
-        e = -(b["emo_t"][b["emo_m"]] * torch.log_softmax(l[b["emo_m"], :NE], -1)).sum(-1).mean()
+        le = l[b["emo_m"], :NE]
+        if BALANCE_TAU:      # balanced softmax: train on logits + tau*log(prior) so the raw logits stay unbiased
+            le = le + BALANCE_TAU * LOG_PRIOR
+        e = -(b["emo_t"][b["emo_m"]] * torch.log_softmax(le, -1)).sum(-1).mean()
         total = total + e; parts["emoji"] = e.item()
     if b["tone_m"].sum() > 0:
         t = (F.binary_cross_entropy_with_logits(l[:, OFF_T:OFF_S], b["tone_t"], reduction="none") * b["tone_m"]).sum() / b["tone_m"].sum()
@@ -593,6 +622,6 @@ print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                                    "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v1_resume" if RESUME else "emojet_v1")) + ("_smoke" if SMOKE else "") + ".ipynb")
+out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v2" if V2 else ("emojet_v1_resume" if RESUME else "emojet_v1"))) + ("_smoke" if SMOKE else "") + ".ipynb")
 out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")
