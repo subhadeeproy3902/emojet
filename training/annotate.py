@@ -28,7 +28,7 @@ LLAMA_CPP_COMMIT = "__LLAMA_CPP_COMMIT__"
 MODEL_REPO, MODEL_FILE = "unsloth/Qwen3.6-35B-A3B-GGUF", "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
 TIME_BUDGET_H = 0.6 if SMOKE else 6.0
 PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 70_000, "hi": 45_000, "en": 45_000}
-BATCH, SLOTS = 16, 8
+BATCH, SLOTS = 8, 8
 
 T0 = time.time()
 OUT = "/kaggle/working/annot"
@@ -64,7 +64,14 @@ random.shuffle(msgs)
 log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.items()})
 
 # ---------------------------------------------------------------- engine
-if not os.path.exists("/tmp/llama.cpp/build/bin/llama-server"):
+# a llama-server built by an earlier run of this kernel (attached as input) saves ~25 GPU minutes
+SERVER_BIN = next(iter(sorted(glob.glob("/kaggle/input/**/bin/llama-server-cuda", recursive=True))), None)
+if SERVER_BIN:
+    subprocess.run(["cp", SERVER_BIN, "/tmp/llama-server-cuda"], check=True)
+    os.chmod("/tmp/llama-server-cuda", 0o755)
+    SERVER_BIN = "/tmp/llama-server-cuda"
+    log("using prebuilt llama-server")
+if not SERVER_BIN:
     subprocess.run(f"git clone -q https://github.com/ggml-org/llama.cpp /tmp/llama.cpp && cd /tmp/llama.cpp && "
                    f"git checkout -q {LLAMA_CPP_COMMIT}", shell=True, check=True)
     nvcc = next((p for p in ("/usr/local/cuda/bin/nvcc", "/usr/bin/nvcc") if os.path.exists(p)), "nvcc")
@@ -77,7 +84,7 @@ if not os.path.exists("/tmp/llama.cpp/build/bin/llama-server"):
     print("libcuda:", libcuda, flush=True)
     res = subprocess.run(f"cd /tmp/llama.cpp && cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 "
                          f"-DCMAKE_CUDA_COMPILER={nvcc} {'-DCUDA_cuda_driver_LIBRARY=' + libcuda if libcuda else ''} -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF "
-                         f"-DCMAKE_BUILD_TYPE=Release > /tmp/cmake.log 2>&1 && "
+                         f"-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF > /tmp/cmake.log 2>&1 && "
                          f"cmake --build build --target llama-server -j 4 > /tmp/build.log 2>&1", shell=True)
     if res.returncode:
         for f in ("/tmp/cmake.log", "/tmp/build.log"):
@@ -85,12 +92,15 @@ if not os.path.exists("/tmp/llama.cpp/build/bin/llama-server"):
                 txt = open(f, errors="replace").read()
                 print(f"==== {f}\n" + "\n".join(l for l in txt.splitlines() if "rror" in l or "fatal" in l)[-3000:] + "\n" + txt[-1500:])
         raise SystemExit("llama.cpp build failed")
+    SERVER_BIN = "/tmp/llama.cpp/build/bin/llama-server"
+    os.makedirs("/kaggle/working/bin", exist_ok=True)              # keep it for the next run (static binary)
+    subprocess.run(["cp", SERVER_BIN, "/kaggle/working/bin/llama-server-cuda"], check=True)
 log("llama-server built")
 from huggingface_hub import hf_hub_download  # noqa: E402
 model_path = hf_hub_download(MODEL_REPO, MODEL_FILE, local_dir="/tmp/model")
 log("model downloaded", round(os.path.getsize(model_path) / 2**30, 1), "GB")
 server = subprocess.Popen(
-    ["/tmp/llama.cpp/build/bin/llama-server", "-m", model_path, "--host", "127.0.0.1", "--port", "8080",
+    [SERVER_BIN, "-m", model_path, "--host", "127.0.0.1", "--port", "8080",
      "-ngl", "999", "-ts", "1,1", "-np", str(SLOTS), "-c", str(SLOTS * 4096), "-fa", "on", "--jinja",
      "--chat-template-kwargs", '{"enable_thinking": false}', "--no-webui", "-b", "2048", "-ub", "512"],
     stdout=open("/tmp/server.log", "w"), stderr=subprocess.STDOUT)
@@ -134,7 +144,7 @@ EMOJIS: up to 4 emojis this writer would most likely put in the message, most li
 this chat would send (the thing mentioned, the feeling, the joke), not generic decoration. If the writer already used
 emojis (shown in brackets) they are strong evidence.
 
-Answer with JSON only."""
+Answer with compact JSON on ONE line (no indentation, no line breaks)."""
 
 SCHEMA = {"type": "object", "properties": {"items": {"type": "array", "items": {
     "type": "object", "properties": {
@@ -142,8 +152,11 @@ SCHEMA = {"type": "object", "properties": {"items": {"type": "array", "items": {
         "tones": {"type": "array", "items": {"enum": TONES}, "minItems": 1, "maxItems": 3},
         "style": {"enum": STYLES},
         "axes": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 9}, "minItems": 6, "maxItems": 6},
-        "emojis": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4}},
+        "emojis": {"type": "array", "items": {"type": "string", "maxLength": 12}, "minItems": 1, "maxItems": 4}},
     "required": ["i", "tones", "style", "axes", "emojis"]}}}, "required": ["items"]}
+
+
+stat = {"batches": 0, "tokens": 0, "secs": 0.0, "cut": 0}
 
 
 def ask(batch):
@@ -153,12 +166,17 @@ def ask(batch):
         lines.append(f"{k}. {x['t'][:500]}" + (f"   [{typed}]" if typed else ""))
     body = {"messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": "Annotate these messages:\n" + "\n".join(lines)}],
-            "temperature": 0.0, "max_tokens": 90 * len(batch),
+            "temperature": 0.0, "max_tokens": 400 * len(batch),
             "response_format": {"type": "json_schema", "json_schema": {"name": "annotations", "schema": SCHEMA}}}
     req = urllib.request.Request("http://127.0.0.1:8080/v1/chat/completions", json.dumps(body).encode(),
                                  {"Content-Type": "application/json"})
-    out = json.loads(urllib.request.urlopen(req, timeout=900).read())
-    items = json.loads(out["choices"][0]["message"]["content"])["items"]
+    t = time.time()
+    out = json.loads(urllib.request.urlopen(req, timeout=1800).read())
+    ch = out["choices"][0]
+    stat["batches"] += 1; stat["tokens"] += out.get("usage", {}).get("completion_tokens", 0); stat["secs"] += time.time() - t
+    if ch.get("finish_reason") != "stop":
+        stat["cut"] += 1
+    items = json.loads(ch["message"]["content"])["items"]
     res = []
     for it in items:
         k = it.get("i", 0) - 1
@@ -199,9 +217,10 @@ t_run = time.time()
 with cf.ThreadPoolExecutor(SLOTS) as ex:
     futs = [ex.submit(work, b) for b in batches]
     for k, f in enumerate(cf.as_completed(futs), 1):
-        if k % 50 == 0:
+        if k % (10 if SMOKE else 100) == 0:
             rate = done / max(1, time.time() - t_run)
-            log(f"{done:,} annotated, {failed:,} failed, {rate * 3600:,.0f}/hour")
+            log(f"{done:,} annotated, {failed:,} failed, {rate * 3600:,.0f}/hour; "
+                f"{stat['tokens'] / max(1, stat['batches']):.0f} tokens/batch, {stat['cut']} cut off")
 fh.close()
 server.terminate()
 log(f"finished: {done:,} annotated, {failed:,} failed")
