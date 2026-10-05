@@ -114,6 +114,10 @@ hocche hochhe hoyeche hoyche lagche lagse lage dekho dekhi bujhlam bujhi jani ja
 sathe shathe kothay kobe kivabe kibhabe shundor sundor valobashi bhalobashi bhalobasha valobasa koto boro choto kaj kaaj
 porashona khete ghum ghumabo shuvo subho dhonnobad""".split())
 ROMAN_SHARED = {"bhai", "na", "nai", "dada", "didi", "bhaiya"}
+ROMAN_HI -= {"the", "mere", "main", "mat", "bas", "log", "hum", "ho", "jo", "kar", "bol", "fir", "mai", "sab", "na", "ji",
+             "diya", "tha", "aur", "wala", "yeh", "chal", "mast"}
+ROMAN_BN -= {"take", "ache", "ase", "asi", "bal", "pari", "jani", "tai", "lage", "boro", "mone", "magi", "na", "kaj", "sala",
+             "abar", "shob", "sob", "ki", "koto", "baje", "dekhi", "pore"}
 EN_STOP = set("""the and you that this for are with have not but what all was your just can get like love when one out
 so about how will they from there more good know time she him his her our them would been their who did really
 it's i'm don't can't im dont thank thanks lol omg please today day best happy new great""".split())
@@ -152,10 +156,12 @@ def language(text, hint=None):
     words = WORD.findall(text.lower())
     rh = sum(w in ROMAN_HI and w not in ROMAN_SHARED for w in words)
     rb = sum(w in ROMAN_BN and w not in ROMAN_SHARED for w in words)
-    need = 1 if len(words) <= 4 else 2
-    if rb >= need and rb >= rh:
+    # romanized Hindi/Bengali: a real share of its own words, not one lookalike in an English sentence
+    def roman(k):
+        return k >= 1 and (len(words) <= 4 or k >= 3 or k / max(1, len(words)) >= 0.15)
+    if roman(rb) and rb >= rh:
         return "bn"
-    if rh >= need:
+    if roman(rh):
         return "hi"
     if hint in ("bn", "hi") and (rb or rh):           # a Bengali/Hindi source with a romanized word
         return "bn" if rb >= rh else "hi"
@@ -316,7 +322,7 @@ def daraz_kaggle():
             continue
         with open(path, encoding="utf-8", errors="replace", newline="") as fh:
             for r in take(csv.DictReader(fh)):
-                text = r.get("Review") or r.get("review") or r.get("text") or ""
+                text = next((v for k, v in r.items() if k and re.search("review|text|comment", k, re.I) and v), "")
                 offer(text, "daraz", "bn")
 
 
