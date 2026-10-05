@@ -186,11 +186,37 @@ seen = set()
 stats = collections.defaultdict(collections.Counter)
 
 
+# real messages WITHOUT emojis (slang, chat) for the tone annotator, which also suggests emojis for them
+PLAIN_QUOTA = {"en": 60_000, "hi": 120_000, "bn": 200_000} if not SMOKE else {"en": 300, "hi": 300, "bn": 300}
+PLAIN_P = {"twitter100m": 0.01, "bluesky_2m": 0.03, "bluesky_10m": 0.0, "yt_shorts": 0.05, "hindi_tweets": 0.05}
+plain = {l: [] for l in PLAIN_QUOTA}
+
+
+def offer_plain(raw, src, hint):
+    if random.random() > PLAIN_P.get(src, 1.0):
+        return
+    text = clean(raw)
+    if not 3 <= len(text) <= 500 or SPAM.search(text) or text.count("#") > 3:
+        return
+    lang = language(text, hint)
+    if lang is None or len(plain[lang]) >= PLAIN_QUOTA[lang]:
+        return
+    key = hashlib.blake2b(("p|" + re.sub(r"\W+", "", text.lower())).encode(), digest_size=8).digest()
+    if key in seen:
+        return
+    seen.add(key)
+    plain[lang].append({"t": text, "e": [], "l": lang, "s": src})
+    stats[src]["plain_" + lang] += 1
+
+
 def offer(raw, src, hint=None, names=False):
     """One real message -> maybe one example."""
     st = stats[src]
     st["read"] += 1
-    if not isinstance(raw, str) or not HAS_EMOJI.search(raw) and not (names and ":" in raw):
+    if not isinstance(raw, str):
+        return
+    if not HAS_EMOJI.search(raw) and not (names and ":" in raw):
+        offer_plain(raw, src, hint)
         return
     if names:
         raw = emoji.emojize(raw, language="alias")
@@ -429,11 +455,13 @@ def write(name, rows):
 
 write("train.jsonl.gz", train)
 write("test.jsonl.gz", test)
+write("plain.jsonl.gz", [r for rows in plain.values() for r in rows])
 
 cover = collections.Counter(i for r in train for i in r["e"])
 summary = {
     "train": len(train), "test": len(test),
     "per_language": {l: len(v) for l, v in kept.items()},
+    "plain_per_language": {l: len(v) for l, v in plain.items()},
     "per_source": {s: dict(c) for s, c in stats.items()},
     "emojis_with_1+": sum(1 for i in range(len(EMOJIS)) if cover[i] >= 1),
     "emojis_with_50+": sum(1 for i in range(len(EMOJIS)) if cover[i] >= 50),

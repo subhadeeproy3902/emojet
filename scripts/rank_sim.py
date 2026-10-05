@@ -17,7 +17,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 URL = "http://127.0.0.1:8080/embedding"
 
 cat = json.loads((ROOT / "labels/emoji-catalog.json").read_text(encoding="utf-8"))["emojis"]
-tones_cfg = json.loads((ROOT / "labels/tones.json").read_text(encoding="utf-8"))
+import os
+# label layout must match the model: Emojet-v1 / v2-pre have 46 tones (labels/tones-v1.json), v2 has 65 (labels/tones.json)
+tones_cfg = json.loads((ROOT / os.environ.get("TONES", "labels/tones.json")).read_text(encoding="utf-8"))
 EMOJIS = [e["e"] for e in cat]
 TONES = list(tones_cfg["tones"])
 NE, NT = len(EMOJIS), len(TONES)
