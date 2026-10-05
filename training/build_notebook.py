@@ -294,14 +294,14 @@ if V2:
 # real messages (emojet-data kernel): what people actually typed, the emojis they used are the labels
 real_test = []
 if REAL:
-    import glob, gzip as _gzip
+    import glob, html, gzip as _gzip
     rdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True))[0])
     n0 = len(ex)
     real_rows = [json.loads(l) for l in _gzip.open(f"{rdir}/train.jsonl.gz", "rt", encoding="utf-8")]
     real_test = [json.loads(l) for l in _gzip.open(f"{rdir}/test.jsonl.gz", "rt", encoding="utf-8")]
     for r in real_rows:
         for _ in range(2 if r["l"] == "bn" else 1):        # Bengali is the scarcest language: seen twice
-            ex.append(dict(text=r["t"], reply=None, emo=r["e"], tones=None, style=None, dims=None, src="real-" + r["l"]))
+            ex.append(dict(text=html.unescape(r["t"]), reply=None, emo=r["e"], tones=None, style=None, dims=None, src="real-" + r["l"]))
     # long drafts: 2-6 real messages of one language in a row; the last one counts most (it's what is being sent)
     by_lang = {}
     for r in real_rows:
@@ -348,7 +348,7 @@ if REAL:
             dims = {k: min(9, max(0, int(v))) / 9 for k, v in enumerate(r.get("axes", [])[:ND])}
             gold = r.get("e") or []
             silver = emoji_ids("".join(r.get("emojis", [])))
-            x = dict(text=r["t"], reply=None, emo=(gold or silver) or None, ew=(1.0 if gold else 0.5),
+            x = dict(text=html.unescape(r["t"]), reply=None, emo=(gold or silver) or None, ew=(1.0 if gold else 0.5),
                      tones=tone_t, tone_w=tones, style=STYLE_IDX.get(r.get("style")), dims=dims, src="annot-" + r["l"])
             if hash(r["t"]) % 50 == 0:
                 ann_test.append(x)                            # 2% held out to measure tone/style agreement

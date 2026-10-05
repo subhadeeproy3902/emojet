@@ -16,6 +16,7 @@ import glob
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import threading
@@ -28,7 +29,7 @@ LLAMA_CPP_COMMIT = "__LLAMA_CPP_COMMIT__"
 MODEL_REPO, MODEL_FILE = "unsloth/Qwen3.6-35B-A3B-GGUF", "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
 TIME_BUDGET_H = 0.6 if SMOKE else 6.0
 PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 70_000, "hi": 45_000, "en": 45_000}
-BATCH, SLOTS = 8, 8
+BATCH, SLOTS = 12, 16
 
 T0 = time.time()
 OUT = "/kaggle/working/annot"
@@ -71,6 +72,8 @@ if SERVER_BIN:
     os.chmod("/tmp/llama-server-cuda", 0o755)
     SERVER_BIN = "/tmp/llama-server-cuda"
     log("using prebuilt llama-server")
+    os.makedirs("/kaggle/working/bin", exist_ok=True)              # pass it on to the next run
+    subprocess.run(["cp", SERVER_BIN, "/kaggle/working/bin/llama-server-cuda"], check=True)
 if not SERVER_BIN:
     subprocess.run(f"git clone -q https://github.com/ggml-org/llama.cpp /tmp/llama.cpp && cd /tmp/llama.cpp && "
                    f"git checkout -q {LLAMA_CPP_COMMIT}", shell=True, check=True)
@@ -129,7 +132,7 @@ slang, idioms, sarcasm and banter in all three languages. Judge only the writer'
 TONES (pick 1 to 3 that clearly apply, most dominant first; use "neutral" only if nothing else fits):
 {chr(10).join(tone_line(n, v) for n, v in TAX['tones'].items())}
 
-STYLE (exactly one, the writer's behavior toward the reader):
+STYLE (the writer's behavior toward the reader; "-" if the message shows no clear style, e.g. plain small talk or a statement):
 {chr(10).join(f'- {n}: {v["desc"]}' for n, v in TAX['styles']['options'].items())}
 
 AXES (integers 0..9, in this order):
@@ -144,16 +147,36 @@ EMOJIS: up to 4 emojis this writer would most likely put in the message, most li
 this chat would send (the thing mentioned, the feeling, the joke), not generic decoration. If the writer already used
 emojis (shown in brackets) they are strong evidence.
 
-Answer with compact JSON on ONE line (no indentation, no line breaks)."""
+FORMAT: exactly one line per message, nothing else:
+<number>|<tones, comma-separated>|<style or ->|<the 6 axes as 6 digits>|<emojis>
+Example lines (for other messages):
+1|sarcastic,playful|passive-aggressive|274635|🙄😂
+2|joyful,appreciative|-|382723|🥳❤️🙏"""
 
-SCHEMA = {"type": "object", "properties": {"items": {"type": "array", "items": {
-    "type": "object", "properties": {
-        "i": {"type": "integer"},
-        "tones": {"type": "array", "items": {"enum": TONES}, "minItems": 1, "maxItems": 3},
-        "style": {"enum": STYLES},
-        "axes": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 9}, "minItems": 6, "maxItems": 6},
-        "emojis": {"type": "array", "items": {"type": "string", "maxLength": 12}, "minItems": 1, "maxItems": 4}},
-    "required": ["i", "tones", "style", "axes", "emojis"]}}}, "required": ["items"]}
+ALIAS = {}
+for _n, _v in TAX["tones"].items():
+    ALIAS[_n] = _n
+    for _a in _v.get("aliases", []):
+        ALIAS.setdefault(_a.lower(), _n)
+LINE = re.compile(r"^\s*(\d+)\s*\|([^|]*)\|([^|]*)\|\s*(\d{6})\s*\|(.*)$")
+
+
+def parse(line, n):
+    m = LINE.match(line)
+    if not m:
+        return None
+    k = int(m.group(1)) - 1
+    tones = []
+    for t in m.group(2).split(","):
+        t = ALIAS.get(t.strip().lower())
+        if t and t not in tones:
+            tones.append(t)
+    style = m.group(3).strip().lower()
+    style = style if style in STYLES else None
+    emojis = [ch for ch in m.group(5).strip().split() if ch] or [m.group(5).strip()]
+    if not 0 <= k < n or not tones:
+        return None
+    return k, tones[:3], style, [int(c) for c in m.group(4)], "".join(emojis)[:40]
 
 
 stat = {"batches": 0, "tokens": 0, "secs": 0.0, "cut": 0}
@@ -166,8 +189,7 @@ def ask(batch):
         lines.append(f"{k}. {x['t'][:500]}" + (f"   [{typed}]" if typed else ""))
     body = {"messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": "Annotate these messages:\n" + "\n".join(lines)}],
-            "temperature": 0.0, "max_tokens": 400 * len(batch),
-            "response_format": {"type": "json_schema", "json_schema": {"name": "annotations", "schema": SCHEMA}}}
+            "temperature": 0.0, "max_tokens": 60 * len(batch) + 50}
     req = urllib.request.Request("http://127.0.0.1:8080/v1/chat/completions", json.dumps(body).encode(),
                                  {"Content-Type": "application/json"})
     t = time.time()
@@ -176,12 +198,13 @@ def ask(batch):
     stat["batches"] += 1; stat["tokens"] += out.get("usage", {}).get("completion_tokens", 0); stat["secs"] += time.time() - t
     if ch.get("finish_reason") != "stop":
         stat["cut"] += 1
-    items = json.loads(ch["message"]["content"])["items"]
-    res = []
-    for it in items:
-        k = it.get("i", 0) - 1
-        if 0 <= k < len(batch):
-            res.append({**batch[k], "tones": it["tones"], "style": it["style"], "axes": it["axes"], "emojis": it["emojis"]})
+    res, got = [], set()
+    for line in ch["message"]["content"].splitlines():
+        p = parse(line, len(batch))
+        if p and p[0] not in got:
+            got.add(p[0])
+            k, tones, style, axes, emojis = p
+            res.append({**batch[k], "tones": tones, "style": style, "axes": axes, "emojis": [emojis]})
     return res
 
 
