@@ -11,6 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = sys.argv[1] if len(sys.argv) > 1 else "main"
 SMOKE = "--smoke" in sys.argv
 MINI = "--mini" in sys.argv     # distil Emojet-v1 into a half-depth student
+RESUME = "--resume" in sys.argv # continue training Emojet-v1 for one epoch (adds chat-object data)
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
 
 import base64 as _b64, gzip as _gz
@@ -30,7 +31,7 @@ def code(text):
 
 
 md(f"""
-# Emojet — training **{"Emojet-v1-mini (distilled)" if MINI else "Emojet-v1"}**
+# Emojet — training **{"Emojet-v1-mini (distilled)" if MINI else ("Emojet-v1, continued with chat-object data" if RESUME else "Emojet-v1")}**
 
 Fine-tunes [Laya](https://huggingface.co/convaiinnovations/laya)'s encoder (ModernBERT-large, 28 layers, Apache-2.0) into one model that reads a **whole message** (plus the message being replied to) and outputs, in a single pass:
 
@@ -54,10 +55,13 @@ LAYA_REV = "7b928d828b7b0e022f929d9bd2e44165aa270148"      # convaiinnovations/l
 LLAMA_CPP_COMMIT = "{LLAMA_CPP_COMMIT}"
 SMOKE = {SMOKE}                                            # True = quick end-to-end test on 4,000 examples
 MINI = {MINI}                                              # True = distil Emojet-v1 into Emojet-v1-mini
+RESUME = {RESUME}                                          # True = continue Emojet-v1 for one epoch
 NAME = "emojet-v1-mini" if MINI else "emojet-v1"
 KEEP = [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25]  # teacher layers kept (every 3rd = global attention, pattern preserved)
 KD_T, KD_W, SUP_W = 2.0, 1.0, 0.5
-MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if SMOKE else (2 if MINI else 3))
+MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if (SMOKE or RESUME) else (2 if MINI else 3))
+if RESUME:
+    LR_ENCODER, LR_HEAD, WARMUP = 1.5e-5, 1e-4, 0.03
 LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
 TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
 TIME_BUDGET_H = 7.0                                        # stop training early if a run gets this long
@@ -243,6 +247,29 @@ for i, e in enumerate(catalog):
     for k in e["kw"][:2]:
         add(k, "cldr", emo=[i])
 
+# chat-object data: things mentioned inside casual chat -> the thing's emoji + a feeling emoji
+OBJ_GROUPS = {"Food & Drink", "Animals & Nature", "Travel & Places", "Activities", "Objects"}
+TEMPLATES = [
+    ("just got a new {x}!!", "🎉🤩"), ("my {x} broke again", "😩💔"), ("look at this {x} lol", "😂👀"),
+    ("can't stop thinking about {x}", "😍✨"), ("ugh the {x} again", "🙄😤"), ("we're getting {x} tonight", "🎉😋"),
+    ("bhai {x} dekh", "👀😂"), ("ami {x} niye bose achi", "😅👀"), ("aaj {x} ka plan hai", "🎉🙌"),
+    ("is that a {x}?", "👀😮"), ("I love {x} so much", "😍❤️"), ("no more {x} for me", "😩🙅"),
+    ("watching the {x} with family", "😊❤️"), ("forgot my {x} at home", "🤦😩"),
+]
+FLAG_TEMPLATES = [("landed in {x} finally", "✈️🎉"), ("{x} won!!!", "🎉🔥"), ("missing {x} so much", "🥺❤️"), ("trip to {x} next month", "✈️🤩")]
+n0 = len(ex)
+for i, e in enumerate(catalog):
+    if e["group"] in OBJ_GROUPS:
+        words = [e["name"]] + [k for k in e["kw"][:2] if len(k) > 2]
+        for k in range(4):
+            tpl, feel = random.choice(TEMPLATES)
+            add(tpl.format(x=random.choice(words)), "chat-objects", emo=[i] + emoji_ids(feel))
+    elif e["sub"] == "country-flag":
+        country = e["name"].replace("flag: ", "")
+        for tpl, feel in random.sample(FLAG_TEMPLATES, 2):
+            add(tpl.format(x=country), "chat-objects", emo=[i] + emoji_ids(feel))
+print("chat-object examples:", len(ex) - n0)
+
 # seeds (x25 with light variations)
 def seed_targets(s):
     # hand-written: tones not listed are absent -> every tone gets negative examples too
@@ -302,6 +329,11 @@ res = model.model.load_state_dict({k[8:]: v for k, v in sd.items() if k.startswi
 assert not res.missing_keys and not res.unexpected_keys, res
 del sd
 teacher = None
+if RESUME:
+    import glob
+    tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
+    model = ModernBertForSequenceClassification.from_pretrained(tdir, torch_dtype=torch.float32)
+    print(f"continuing Emojet-v1 from {tdir}")
 if MINI:
     import glob, copy
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
@@ -561,6 +593,6 @@ print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                                    "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else "emojet_v1") + ("_smoke" if SMOKE else "") + ".ipynb")
+out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v1_resume" if RESUME else "emojet_v1")) + ("_smoke" if SMOKE else "") + ".ipynb")
 out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")
