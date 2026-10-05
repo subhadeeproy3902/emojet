@@ -6,7 +6,7 @@ It is a fine-tune of [Laya](https://huggingface.co/convaiinnovations/laya) (Apac
 
 | Version | Status |
 |---|---|
-| **Emojet-v1** | trained 2026-10-05 (this README) |
+| **Emojet-v1** | trained 2026-10-05: 3 epochs + 1 epoch with chat-object data (this README) |
 | Emojet-v1-mini | planned: half the layers, distilled from v1, ~half the size |
 
 ## What it outputs
@@ -39,22 +39,24 @@ my message: <the draft>
 | Vocabulary | 50,368 (ModernBERT BPE) |
 | Context used | 64 tokens (message + reply); the encoder supports 8,192 |
 | Base | `convaiinnovations/laya` @ `7b928d82` (its encoder; Laya's decision head is not used) |
-| Weights | `safetensors` fp16 (~800 MB) · GGUF F16 (~797 MB) · GGUF Q4_0 (~250 MB, phones) · GGUF Q8_0 |
+| Weights | `safetensors` fp16 (~800 MB) · GGUF F16 (~797 MB) · **GGUF Q4_K_M (273 MB, phones)** · GGUF Q8_0 (424 MB) |
 | Speed | ~0.1–0.2 s on a laptop CPU; ~0.2–0.4 s on a mid-range phone CPU (4 big cores) |
 
 ## Results (held-out data, never trained on)
 
 | Test | Untrained Laya (mood question) | **Emojet-v1** |
 |---|---|---|
-| Emoji hit — an acceptable emoji in the top 6 (24 chat messages) | — | **20 / 24** |
+| Emoji hit — an acceptable emoji in the top 6 (24 chat messages) | — | **23 / 24** |
 | Tone of voice in the top 3 (25 messages) | 18 / 25 | **22 / 25** |
 | Communication style (13 messages) | 6 / 13 | **11 / 13** |
-| Concepts → emoji, emojinize test (1,500 sentences) | — | **99.6 %** |
-| Feelings → emoji, GoEmotions test | — | **87.6 %** |
-| Hinglish sarcasm (2,344 headlines) | — | **81.1 %** |
-| Distinct emojis used across the tests | ≤ ~150 (mood rows) | **534** |
+| Concepts → emoji, emojinize test (1,500 sentences) | — | **99.3 %** |
+| Feelings → emoji, GoEmotions test | — | **86.8 %** |
+| Hinglish sarcasm (2,344 headlines) | — | **82.0 %** |
+| Distinct emojis used across the tests | ≤ ~150 (mood rows) | **542** |
 
-Known weaknesses (v2 work): questions about things ("pizza tonight?") lean to ❓🤔 instead of the thing; some illness words map to sad faces instead of 🤒; 🔥🙌🤩 are over-used; Romanized Bengali/Hindi is still thin in the data.
+Chat about things now works ("I'm watching television" → 📺, "happy diwali" → 🪔, "pizza tonight?" → 🍕, "fever" → 😷🤒, "India won" → 🇮🇳🏏) after a 4th epoch with ~4,000 chat-object examples. Known weaknesses (v2): some animals ("puppy" → 👶), 🔥🙌🤩 still frequent, Romanized Bengali/Hindi still thin in the data.
+
+Quantization (llama.cpp): **Q4_K_M** (273 MB) keeps the scores within ~1.1 of F16 and the same test results; Q4_0 drifts too much for this classifier; Q8_0 (424 MB) is near-exact.
 
 ## Run it locally
 
@@ -89,7 +91,7 @@ python3 scripts/test-emojet.py                           # scores the test sets
 
 - Data (≈ 305,500 examples, all licences allow this use): [emojinize-multilingual](https://huggingface.co/datasets/yagizgencer/emojinize-multilingual) (CC-BY-4.0), [GoEmotions](https://huggingface.co/datasets/google-research-datasets/go_emotions) (Apache-2.0), [Hinglish/English sarcasm headlines](https://huggingface.co/datasets/BM2002/hinglish-sarcasm-dataset) (CC-BY-4.0), [SemEval-2018 irony tweets via Natural Instructions](https://huggingface.co/datasets/Lots-of-LoRAs/task386_semeval_2018_task3_irony_detection) (Apache-2.0), [Stanford Politeness](https://huggingface.co/datasets/Cleanlab/stanford-politeness) (MIT), [Pavlick formality](https://huggingface.co/datasets/osyvokon/pavlick-formality-scores) (CC-BY-3.0), [Jigsaw toxicity](https://huggingface.co/datasets/tasksource/jigsaw_toxicity) (Apache-2.0), Unicode CLDR names/keywords (Unicode-3.0), 129 hand-written English/Hinglish/Banglish seeds ([`training/data/seeds.jsonl`](training/data/seeds.jsonl)), synthetic reply pairs.
 - Loss: soft-target cross-entropy over emojis, masked BCE for tones/dimensions, cross-entropy for style; each example only teaches the outputs its source knows about.
-- 3 epochs, batch 64, AdamW (3e-5 encoder / 5e-4 head), fp16, one free Kaggle T4, 126 min.
+- 3 epochs, batch 64, AdamW (3e-5 encoder / 5e-4 head), fp16, one free Kaggle T4, 126 min; then 1 epoch at 1.5e-5 / 1e-4 with the chat-object examples added (42 min).
 - Everything is reproducible: `python3 training/build_notebook.py <commit>` → push to Kaggle with `scripts/kaggle.py` (see [`docs/TRAINING.md`](docs/TRAINING.md)).
 
 ## Licence
