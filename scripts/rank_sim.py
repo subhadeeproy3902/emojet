@@ -23,7 +23,9 @@ TONES = list(tones_cfg["tones"])
 NE, NT = len(EMOJIS), len(TONES)
 TOPIC_GROUPS = {"Animals & Nature", "Food & Drink", "Travel & Places", "Activities", "Objects", "Flags"}
 VIBE = set("🎉🎊✨🔥💥⭐🌟💫⚡🌈🎈🎆🎇🪩") | {"⭐"}
-IS_TOPIC = [e["group"] in TOPIC_GROUPS and e["e"] not in VIBE for e in cat]
+TOPIC_SUBS = {"face-costume", "person-role", "person-activity", "person-sport", "person-fantasy",
+              "person-resting", "family", "zodiac", "religion", "warning", "transport-sign"}
+IS_TOPIC = [(e["group"] in TOPIC_GROUPS or e["sub"] in TOPIC_SUBS) and e["e"] not in VIBE for e in cat]
 E_INDEX = {e: i for i, e in enumerate(EMOJIS)}
 TONE_ROWS = {TONES.index(t): [E_INDEX[x] for x in v["emojis"] if x in E_INDEX] for t, v in tones_cfg["tones"].items()}
 SKIP_TONE_BOOST = {"neutral", "friendly"}
@@ -97,7 +99,9 @@ def main():
               ("just adopted a puppy!!", None), ("I'm watching television", None), ("let's get pizza tonight?", None),
               ("Laptop", "are you coming to the party tonight?"), ("yes!!", "do you want to come to the concert with me?"),
               ("oh great, another monday meeting that could have been an email", None),
-              ("Bhai ami khete jacchi, pore kotha bolchi", None), ("i miss you so much", None)]
+              ("Bhai ami khete jacchi, pore kotha bolchi", None), ("i miss you so much", None),
+              ("Robot is perfect", None), ("Ekdom", None), ("Haga pacche", None), ("Tor matha thik hoe geche", None),
+              ("Ami bhalo e achi bhai", None)]
     for d, r in probes:
         a, _ = plain(d, r)
         b, _ = pooled(d, r)
