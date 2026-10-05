@@ -1,0 +1,9 @@
+# secrets
+.env
+# model files and downloads (published as release / Hugging Face files, not in git)
+/models/
+/data/
+*.gguf
+*.safetensors
+# python
+__pycache__/

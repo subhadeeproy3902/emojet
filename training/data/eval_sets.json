@@ -1,0 +1,667 @@
+{
+ "emoji_cases": [
+  {
+   "name": "happy-birthday",
+   "text": "Happy birthday bro!! have an amazing year",
+   "reply": null,
+   "ok_emojis": [
+    "✨",
+    "🍾",
+    "🎂",
+    "🎉",
+    "🎊",
+    "🥳"
+   ]
+  },
+  {
+   "name": "lol",
+   "text": "hahaha that was the funniest thing I've seen all week",
+   "reply": null,
+   "ok_emojis": [
+    "💀",
+    "😂",
+    "😅",
+    "😆",
+    "😹",
+    "🤣"
+   ]
+  },
+  {
+   "name": "sad",
+   "text": "I didn't get the job, feeling really low today",
+   "reply": null,
+   "ok_emojis": [
+    "💔",
+    "😔",
+    "😞",
+    "😢",
+    "😭",
+    "🥺"
+   ]
+  },
+  {
+   "name": "thanks",
+   "text": "thank you so much for helping me move yesterday",
+   "reply": null,
+   "ok_emojis": [
+    "❤️",
+    "💐",
+    "😊",
+    "🙏",
+    "🤗",
+    "🥹"
+   ]
+  },
+  {
+   "name": "angry",
+   "text": "this is the third time the delivery guy didn't show up, I'm so done",
+   "reply": null,
+   "ok_emojis": [
+    "💢",
+    "😠",
+    "😡",
+    "😤",
+    "🙄",
+    "🤬"
+   ]
+  },
+  {
+   "name": "love",
+   "text": "I miss you so much, can't wait to see you",
+   "reply": null,
+   "ok_emojis": [
+    "❤️",
+    "💕",
+    "💖",
+    "😍",
+    "😘",
+    "🥰"
+   ]
+  },
+  {
+   "name": "sarcasm",
+   "text": "oh great, another monday meeting that could have been an email",
+   "reply": null,
+   "ok_emojis": [
+    "💢",
+    "💤",
+    "😏",
+    "😒",
+    "😠",
+    "😡",
+    "😤",
+    "😩",
+    "😮‍💨",
+    "😴",
+    "🙃",
+    "🙄",
+    "🤡",
+    "🤬",
+    "🥱",
+    "🫠"
+   ]
+  },
+  {
+   "name": "food",
+   "text": "let's get pizza tonight?",
+   "reply": null,
+   "ok_emojis": [
+    "☕",
+    "🍔",
+    "🍕",
+    "🍻",
+    "😋",
+    "🤤"
+   ]
+  },
+  {
+   "name": "tired",
+   "text": "worked 14 hours today, I'm dead",
+   "reply": null,
+   "ok_emojis": [
+    "💤",
+    "😩",
+    "😮‍💨",
+    "😴",
+    "🥱",
+    "🫠"
+   ]
+  },
+  {
+   "name": "congrats",
+   "text": "congratulations on the promotion, you deserve it!",
+   "reply": null,
+   "ok_emojis": [
+    "✨",
+    "🍾",
+    "🎂",
+    "🎉",
+    "🎊",
+    "🏆",
+    "👏",
+    "💪",
+    "💯",
+    "🙌",
+    "🥳"
+   ]
+  },
+  {
+   "name": "late",
+   "text": "running 10 mins late sorry",
+   "reply": null,
+   "ok_emojis": [
+    "⌛",
+    "⏰",
+    "🏃",
+    "💔",
+    "😅",
+    "😬",
+    "🙇",
+    "🙏",
+    "🚗",
+    "🥺"
+   ]
+  },
+  {
+   "name": "goodnight",
+   "text": "good night, sleep well",
+   "reply": null,
+   "ok_emojis": [
+    "✨",
+    "🌌",
+    "🌙",
+    "💤",
+    "😴",
+    "🛌"
+   ]
+  },
+  {
+   "name": "flirty",
+   "text": "you looked really cute today",
+   "reply": null,
+   "ok_emojis": [
+    "❤️",
+    "💋",
+    "💕",
+    "💖",
+    "😉",
+    "😍",
+    "😏",
+    "😘",
+    "🙈",
+    "🥰",
+    "🫣"
+   ]
+  },
+  {
+   "name": "scared",
+   "text": "there's a huge spider in my bathroom help",
+   "reply": null,
+   "ok_emojis": [
+    "🆘",
+    "😨",
+    "😰",
+    "😱",
+    "🙀",
+    "🫣"
+   ]
+  },
+  {
+   "name": "plain",
+   "text": "ok see you at 5",
+   "reply": null,
+   "ok_emojis": [
+    "✅",
+    "✌️",
+    "👀",
+    "👋",
+    "👌",
+    "👍",
+    "💯",
+    "😄",
+    "😊",
+    "🙂",
+    "🙌",
+    "🤗",
+    "🤝",
+    "🫡"
+   ]
+  },
+  {
+   "name": "hype",
+   "text": "we won the match!!! let's gooo",
+   "reply": null,
+   "ok_emojis": [
+    "⚡",
+    "✨",
+    "🍾",
+    "🎂",
+    "🎉",
+    "🎊",
+    "🏆",
+    "👏",
+    "💪",
+    "💯",
+    "🔥",
+    "🙌",
+    "🚀",
+    "🤩",
+    "🥳"
+   ]
+  },
+  {
+   "name": "sick",
+   "text": "I've got a fever and a sore throat",
+   "reply": null,
+   "ok_emojis": [
+    "💊",
+    "😷",
+    "🤒",
+    "🤕",
+    "🤧",
+    "🥴"
+   ]
+  },
+  {
+   "name": "travel",
+   "text": "landed in Goa finally, beach time",
+   "reply": null,
+   "ok_emojis": [
+    "✈️",
+    "🌍",
+    "🏖️",
+    "📍",
+    "🚗",
+    "🧳"
+   ]
+  },
+  {
+   "name": "hinglish",
+   "text": "bhai kya scene hai aaj party karte hain",
+   "reply": null,
+   "ok_emojis": [
+    "⚡",
+    "✨",
+    "🍾",
+    "🎂",
+    "🎉",
+    "🎊",
+    "💯",
+    "🔥",
+    "🙌",
+    "🚀",
+    "🤩",
+    "🥳"
+   ]
+  },
+  {
+   "name": "cringe",
+   "text": "I accidentally sent that text to my boss",
+   "reply": null,
+   "ok_emojis": [
+    "🆘",
+    "😅",
+    "😨",
+    "😬",
+    "😰",
+    "😱",
+    "😳",
+    "🙀",
+    "🙈",
+    "🤦",
+    "🫣"
+   ]
+  },
+  {
+   "name": "reply-same",
+   "text": "same here",
+   "reply": "I just finished the whole series in one night",
+   "ok_emojis": [
+    "✅",
+    "👌",
+    "👍",
+    "💀",
+    "💤",
+    "💯",
+    "😂",
+    "😅",
+    "😆",
+    "😩",
+    "😮‍💨",
+    "😴",
+    "😹",
+    "🤝",
+    "🤣",
+    "🥱",
+    "🫠",
+    "🫡"
+   ]
+  },
+  {
+   "name": "reply-where",
+   "text": "where exactly?",
+   "reply": "let's meet near the station",
+   "ok_emojis": [
+    "✅",
+    "✈️",
+    "✌️",
+    "🌍",
+    "🏖️",
+    "👀",
+    "👌",
+    "👍",
+    "💯",
+    "📍",
+    "😊",
+    "🙂",
+    "🚗",
+    "🤝",
+    "🧳",
+    "🫡"
+   ]
+  },
+  {
+   "name": "reply-yes",
+   "text": "yes!!",
+   "reply": "do you want to come to the concert with me?",
+   "ok_emojis": [
+    "⚡",
+    "✅",
+    "✨",
+    "❤️",
+    "🍾",
+    "🎂",
+    "🎉",
+    "🎊",
+    "👌",
+    "👍",
+    "💕",
+    "💖",
+    "💯",
+    "🔥",
+    "😍",
+    "😘",
+    "🙌",
+    "🚀",
+    "🤝",
+    "🤩",
+    "🥰",
+    "🥳",
+    "🫡"
+   ]
+  },
+  {
+   "name": "banglish-eat-later",
+   "text": "Bhai ami khete jacchi, pore kotha bolchi",
+   "reply": null,
+   "ok_emojis": [
+    "⏰",
+    "✌",
+    "🍔",
+    "🍕",
+    "🍚",
+    "🍛",
+    "🍜",
+    "🍲",
+    "🍽",
+    "🏃",
+    "👋",
+    "📞",
+    "😋",
+    "🙏",
+    "🤤"
+   ]
+  }
+ ],
+ "tone_cases": [
+  {
+   "text": "I understand your point, but I need us to meet this deadline first.",
+   "ok_styles": [
+    "assertive"
+   ],
+   "ok_tones": [
+    "authoritative",
+    "confident",
+    "formal",
+    "respectful",
+    "serious"
+   ]
+  },
+  {
+   "text": "Whatever everyone else wants to do is fine with me.",
+   "ok_styles": [
+    "passive"
+   ],
+   "ok_tones": [
+    "apathetic",
+    "friendly",
+    "neutral",
+    "tentative"
+   ]
+  },
+  {
+   "text": "You need to stop doing it that way because it's wrong.",
+   "ok_styles": [
+    "aggressive"
+   ],
+   "ok_tones": [
+    "accusatory",
+    "aggressive",
+    "authoritative",
+    "condescending",
+    "demanding",
+    "disapproving"
+   ]
+  },
+  {
+   "text": "Fine, I'll do it your way, since you always know best.",
+   "ok_styles": [
+    "passive-aggressive"
+   ],
+   "ok_tones": [
+    "bitter",
+    "condescending",
+    "cynical",
+    "defensive",
+    "sarcastic"
+   ]
+  },
+  {
+   "text": "oh wow, another meeting, my favourite thing ever",
+   "ok_styles": [
+    "passive-aggressive"
+   ],
+   "ok_tones": [
+    "cynical",
+    "sarcastic"
+   ]
+  },
+  {
+   "text": "That's so sweet of you, thank you for remembering my birthday",
+   "ok_styles": null,
+   "ok_tones": [
+    "appreciative",
+    "joyful",
+    "loving"
+   ]
+  },
+  {
+   "text": "I'm so sorry, I completely forgot to call you back",
+   "ok_styles": null,
+   "ok_tones": [
+    "apologetic"
+   ]
+  },
+  {
+   "text": "You can do this, I believe in you!",
+   "ok_styles": [
+    "assertive"
+   ],
+   "ok_tones": [
+    "confident",
+    "empathetic",
+    "encouraging"
+   ]
+  },
+  {
+   "text": "That must have been really hard for you, I'm here if you need anything",
+   "ok_styles": null,
+   "ok_tones": [
+    "empathetic"
+   ]
+  },
+  {
+   "text": "Honestly I'm not sure that's how it works, but maybe?",
+   "ok_styles": [
+    "passive"
+   ],
+   "ok_tones": [
+    "confused",
+    "skeptical",
+    "tentative"
+   ]
+  },
+  {
+   "text": "Well, obviously you wouldn't understand, it's a bit complex for you",
+   "ok_styles": [
+    "aggressive",
+    "passive-aggressive"
+   ],
+   "ok_tones": [
+    "condescending"
+   ]
+  },
+  {
+   "text": "It wasn't my fault, I did exactly what you told me to do",
+   "ok_styles": null,
+   "ok_tones": [
+    "accusatory",
+    "angry",
+    "defensive"
+   ]
+  },
+  {
+   "text": "You always mess this up and then blame everyone else",
+   "ok_styles": [
+    "aggressive"
+   ],
+   "ok_tones": [
+    "accusatory",
+    "aggressive",
+    "angry"
+   ]
+  },
+  {
+   "text": "meh, do whatever, I don't really care",
+   "ok_styles": [
+    "passive"
+   ],
+   "ok_tones": [
+    "apathetic"
+   ]
+  },
+  {
+   "text": "WE GOT THE TICKETS!!! I'm literally screaming",
+   "ok_styles": null,
+   "ok_tones": [
+    "enthusiastic",
+    "joyful"
+   ]
+  },
+  {
+   "text": "Please submit the report by 5 PM today. No exceptions.",
+   "ok_styles": [
+    "aggressive",
+    "assertive"
+   ],
+   "ok_tones": [
+    "authoritative",
+    "demanding",
+    "formal",
+    "urgent"
+   ]
+  },
+  {
+   "text": "Dear team, please find the updated schedule attached.",
+   "ok_styles": [
+    "assertive"
+   ],
+   "ok_tones": [
+    "formal",
+    "neutral",
+    "respectful"
+   ]
+  },
+  {
+   "text": "The train leaves at 6:40 from platform 3.",
+   "ok_styles": null,
+   "ok_tones": [
+    "neutral"
+   ]
+  },
+  {
+   "text": "hehe you wish you could beat me at this game",
+   "ok_styles": null,
+   "ok_tones": [
+    "confident",
+    "playful",
+    "witty"
+   ]
+  },
+  {
+   "text": "remember when we used to bunk classes and eat maggi at 2am",
+   "ok_styles": null,
+   "ok_tones": [
+    "joyful",
+    "nostalgic"
+   ]
+  },
+  {
+   "text": "i'm kinda nervous about the interview tomorrow",
+   "ok_styles": null,
+   "ok_tones": [
+    "anxious"
+   ]
+  },
+  {
+   "text": "wait WHAT, she said yes??",
+   "ok_styles": null,
+   "ok_tones": [
+    "enthusiastic",
+    "surprised"
+   ]
+  },
+  {
+   "text": "people only call you when they need something, that's life",
+   "ok_styles": null,
+   "ok_tones": [
+    "bitter",
+    "cynical",
+    "pessimistic"
+   ]
+  },
+  {
+   "text": "you looked really cute today ngl",
+   "ok_styles": null,
+   "ok_tones": [
+    "admiring",
+    "flirty",
+    "loving"
+   ]
+  },
+  {
+   "text": "it's fine. really. I'm fine.",
+   "ok_styles": [
+    "passive",
+    "passive-aggressive"
+   ],
+   "ok_tones": [
+    "apathetic",
+    "bitter",
+    "defensive",
+    "sad",
+    "sarcastic"
+   ]
+  }
+ ]
+}

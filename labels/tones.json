@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "note": "Tone-of-voice taxonomy for EmoJet. Canonical labels are what the model outputs; aliases are synonyms from the source lists (used to map datasets and docs). Emoji rows are priors that steer suggestions toward the tone the writer is using. Sources: owner's brief (4 communication styles + 16 tones), Nielsen Norman Group 'Tone-of-Voice Words' (37 words, 4 dimensions), PapersOwl 'Types of Tone' (~85), Grammarly tone detector (40+).",
+  "styles": {
+    "question": "Which communication style is my message?",
+    "options": {
+      "assertive": { "desc": "direct, honest, respectful", "example": "I understand your point, but I need us to meet this deadline first." },
+      "passive": { "desc": "avoids conflict, gives in", "example": "Whatever everyone else wants to do is fine with me." },
+      "aggressive": { "desc": "forceful, hostile, dominating", "example": "You need to stop doing it that way because it's wrong." },
+      "passive-aggressive": { "desc": "hidden hostility, indirect", "example": "Fine, I'll do it your way, since you always know best." }
+    }
+  },
+  "dimensions": {
+    "note": "Nielsen Norman Group's four tone dimensions, as 0..1 scores (first word = 0).",
+    "funny_serious": ["funny", "serious"],
+    "formal_casual": ["formal", "casual"],
+    "respectful_irreverent": ["respectful", "irreverent"],
+    "enthusiastic_matter_of_fact": ["enthusiastic", "matter-of-fact"]
+  },
+  "question": "What is the tone of my message?",
+  "families": {
+    "intellectual": "Intellectual & analytical",
+    "positive": "Positive & engaging",
+    "hostile": "Defensive & hostile",
+    "formal": "Formal & submissive",
+    "vulnerable": "Vulnerable & emotional"
+  },
+  "tones": {
+    "sarcastic":     { "family": "intellectual", "aliases": ["ironic", "mocking", "snarky"], "emojis": ["🙃", "🙄", "😏", "🤡", "😒", "🫠"] },
+    "neutral":       { "family": "intellectual", "aliases": ["objective", "matter-of-fact", "factual", "informative", "detached", "straightforward", "direct", "candid", "frank"], "emojis": ["🙂", "👍", "👌", "✅", "📌", "ℹ️"] },
+    "cynical":       { "family": "intellectual", "aliases": ["distrustful", "jaded"], "emojis": ["🙄", "😒", "🤷", "😮‍💨", "🫤", "🤡"] },
+    "witty":         { "family": "intellectual", "aliases": ["facetious", "clever", "dry", "smart", "quirky"], "emojis": ["😏", "😄", "🤓", "😜", "✨", "😂"] },
+    "analytical":    { "family": "intellectual", "aliases": ["academic", "technical", "logical"], "emojis": ["🤔", "🧐", "📊", "💡", "🔍", "📈"] },
+    "curious":       { "family": "intellectual", "aliases": ["inquisitive", "questioning", "interested"], "emojis": ["🤔", "👀", "🧐", "❓", "🙋", "✨"] },
+    "skeptical":     { "family": "intellectual", "aliases": ["doubtful", "suspicious", "unconvinced"], "emojis": ["🤨", "🧐", "🤔", "😒", "👀", "🙄"] },
+    "thoughtful":    { "family": "intellectual", "aliases": ["reflective", "contemplative", "sincere", "subjective"], "emojis": ["💭", "🤔", "🙂", "✨", "🌙", "📝"] },
+    "pessimistic":   { "family": "intellectual", "aliases": ["gloomy", "negative", "dark"], "emojis": ["😞", "😔", "🌧️", "😩", "🫤", "💔"] },
+    "serious":       { "family": "intellectual", "aliases": ["solemn", "grave", "somber", "conservative"], "emojis": ["😐", "📌", "⚠️", "🙏", "😶", "❗"] },
+
+    "empathetic":    { "family": "positive", "aliases": ["sympathetic", "compassionate", "caring", "understanding"], "emojis": ["🫂", "❤️", "🥺", "🤗", "💛", "🙏"] },
+    "enthusiastic":  { "family": "positive", "aliases": ["excited", "passionate", "energetic", "upbeat"], "emojis": ["🤩", "🔥", "🙌", "🎉", "⚡", "💯"] },
+    "encouraging":   { "family": "positive", "aliases": ["supportive", "reassuring", "inspirational", "motivating"], "emojis": ["💪", "🙌", "✨", "🌟", "🤞", "❤️"] },
+    "playful":       { "family": "positive", "aliases": ["teasing", "lighthearted", "fun", "cheeky"], "emojis": ["😜", "😝", "😆", "🤪", "😏", "🙈"] },
+    "humorous":      { "family": "positive", "aliases": ["funny", "comical", "amusing"], "emojis": ["😂", "🤣", "😆", "💀", "😹", "😄"] },
+    "joyful":        { "family": "positive", "aliases": ["cheerful", "happy", "delighted"], "emojis": ["😊", "😄", "🥳", "😁", "☀️", "🎉"] },
+    "loving":        { "family": "positive", "aliases": ["affectionate", "romantic", "warm", "tender"], "emojis": ["❤️", "🥰", "😘", "💕", "😍", "💖"] },
+    "appreciative":  { "family": "positive", "aliases": ["grateful", "thankful"], "emojis": ["🙏", "😊", "🙌", "💐", "🥹", "❤️"] },
+    "admiring":      { "family": "positive", "aliases": ["proud", "impressed", "praising"], "emojis": ["👏", "🏆", "😍", "🙌", "💯", "🌟"] },
+    "optimistic":    { "family": "positive", "aliases": ["hopeful", "positive"], "emojis": ["🤞", "🌈", "✨", "😊", "☀️", "🙌"] },
+    "friendly":      { "family": "positive", "aliases": ["welcoming", "conversational", "casual", "informal", "cooperative"], "emojis": ["😊", "👋", "🤗", "😄", "✌️", "🙂"] },
+    "confident":     { "family": "positive", "aliases": ["self-assured", "bold", "unapologetic"], "emojis": ["😎", "💪", "🔥", "🤝", "👑", "💯"] },
+    "flirty":        { "family": "positive", "aliases": ["seductive", "charming", "coy"], "emojis": ["😏", "😉", "😘", "🫣", "💋", "🙈"] },
+    "nostalgic":     { "family": "positive", "aliases": ["reminiscent", "sentimental"], "emojis": ["🥹", "📸", "💭", "🕰️", "❤️", "✨"] },
+
+    "condescending": { "family": "hostile", "aliases": ["patronizing", "arrogant", "superior", "smug"], "emojis": ["🙄", "😏", "🤡", "🧐", "😒", "💅"] },
+    "defensive":     { "family": "hostile", "aliases": ["guarded", "justifying"], "emojis": ["😤", "🙄", "😒", "🤷", "😬", "✋"] },
+    "apathetic":     { "family": "hostile", "aliases": ["indifferent", "bored", "dismissive", "unconcerned", "cold"], "emojis": ["😐", "🤷", "🥱", "😑", "🙄", "💤"] },
+    "accusatory":    { "family": "hostile", "aliases": ["blaming", "reproachful"], "emojis": ["😠", "🤨", "👉", "😤", "😒", "🙄"] },
+    "aggressive":    { "family": "hostile", "aliases": ["harsh", "abrasive", "threatening", "hostile", "forceful", "provocative"], "emojis": ["😡", "🤬", "💢", "👊", "😤", "🔥"] },
+    "angry":         { "family": "hostile", "aliases": ["frustrated", "annoyed", "irritated"], "emojis": ["😠", "😤", "😡", "💢", "🙄", "😩"] },
+    "disapproving":  { "family": "hostile", "aliases": ["critical", "judgmental"], "emojis": ["😒", "🙄", "👎", "🤦", "😑", "🫤"] },
+    "bitter":        { "family": "hostile", "aliases": ["resentful", "spiteful"], "emojis": ["😒", "😤", "🙄", "💔", "😑", "🫠"] },
+    "demanding":     { "family": "hostile", "aliases": ["bossy", "impatient", "pushy"], "emojis": ["⏰", "😤", "👉", "❗", "🙄", "😠"] },
+    "rude":          { "family": "hostile", "aliases": ["disrespectful", "coarse", "irreverent", "edgy", "vulgar"], "emojis": ["🖕", "🙄", "🤬", "😒", "💀", "🤡"] },
+
+    "authoritative": { "family": "formal", "aliases": ["commanding", "decisive", "trustworthy"], "emojis": ["📌", "✅", "👉", "💼", "🫡", "❗"] },
+    "formal":        { "family": "formal", "aliases": ["professional", "polished"], "emojis": ["🙂", "👍", "✅", "📎", "💼", "🙏"] },
+    "respectful":    { "family": "formal", "aliases": ["polite", "courteous"], "emojis": ["🙏", "🙂", "😊", "👍", "🤝", "✨"] },
+    "apologetic":    { "family": "formal", "aliases": ["remorseful", "regretful", "sorry"], "emojis": ["🙏", "🥺", "😔", "🙇", "😞", "💔"] },
+    "tentative":     { "family": "formal", "aliases": ["hesitant", "unsure", "uncertain"], "emojis": ["🤔", "😅", "😬", "🫣", "🤷", "😶"] },
+    "urgent":        { "family": "formal", "aliases": ["pressing", "alarmed"], "emojis": ["⚠️", "❗", "⏰", "🆘", "🏃", "‼️"] },
+
+    "sad":           { "family": "vulnerable", "aliases": ["melancholic", "down", "heartbroken"], "emojis": ["😢", "😭", "😔", "💔", "🥺", "😞"] },
+    "anxious":       { "family": "vulnerable", "aliases": ["worried", "nervous", "concerned", "tense"], "emojis": ["😰", "😟", "😬", "🥺", "🙏", "😓"] },
+    "surprised":     { "family": "vulnerable", "aliases": ["shocked", "amazed", "astonished"], "emojis": ["😮", "😲", "🤯", "😳", "👀", "😱"] },
+    "disappointed":  { "family": "vulnerable", "aliases": ["let down", "discouraged", "disheartened"], "emojis": ["😞", "😔", "🫤", "😩", "💔", "😑"] },
+    "confused":      { "family": "vulnerable", "aliases": ["puzzled", "lost"], "emojis": ["😕", "🤔", "😵‍💫", "🤷", "❓", "🧐"] },
+    "embarrassed":   { "family": "vulnerable", "aliases": ["awkward", "sheepish"], "emojis": ["😳", "🙈", "😅", "🫣", "🤦", "😬"] }
+  }
+}

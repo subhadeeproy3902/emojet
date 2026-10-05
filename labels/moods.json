@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "note": "Laya picks a mood label (short words fit its 192-token option budget); the app maps the top moods to these emoji rows. Order inside a row = default ranking.",
+  "question": "What is the feeling or topic of my message?",
+  "moods": {
+    "laughing": { "desc": "funny lol", "emojis": ["😂", "🤣", "💀", "😆", "😹", "😅"] },
+    "love": { "desc": "romantic affection", "emojis": ["❤️", "🥰", "😍", "😘", "💕", "💖"] },
+    "sad": { "desc": "unhappy hurt", "emojis": ["😢", "😭", "💔", "😞", "🥺", "😔"] },
+    "angry": { "desc": "mad annoyed", "emojis": ["😡", "😤", "🤬", "😠", "🙄", "💢"] },
+    "grateful": { "desc": "thanks", "emojis": ["🙏", "😊", "🤗", "🥹", "❤️", "💐"] },
+    "celebration": { "desc": "birthday party", "emojis": ["🎉", "🥳", "🎂", "🎊", "🍾", "✨"] },
+    "proud": { "desc": "congrats achievement", "emojis": ["👏", "🏆", "🙌", "💯", "💪", "🎉"] },
+    "hype": { "desc": "excited lets go", "emojis": ["🔥", "🚀", "💯", "🙌", "🤩", "⚡"] },
+    "tired": { "desc": "exhausted", "emojis": ["😩", "😴", "🥱", "😮‍💨", "🫠", "💤"] },
+    "food": { "desc": "eating hungry", "emojis": ["😋", "🍕", "🍔", "☕", "🍻", "🤤"] },
+    "flirty": { "desc": "cute teasing", "emojis": ["😏", "😉", "😘", "🫣", "🙈", "💋"] },
+    "scared": { "desc": "afraid panic", "emojis": ["😱", "😨", "😰", "🙀", "🫣", "🆘"] },
+    "sarcastic": { "desc": "ironic", "emojis": ["🙃", "🙄", "😒", "🤡", "😏", "🫠"] },
+    "sorry": { "desc": "apology", "emojis": ["🙇", "🥺", "😅", "🙏", "😬", "💔"] },
+    "late": { "desc": "time hurry", "emojis": ["⏰", "🏃", "😅", "🙏", "🚗", "⌛"] },
+    "goodnight": { "desc": "sleep", "emojis": ["🌙", "😴", "💤", "✨", "🛌", "🌌"] },
+    "morning": { "desc": "good morning", "emojis": ["☀️", "🌞", "☕", "😊", "🌻", "👋"] },
+    "sick": { "desc": "ill fever", "emojis": ["🤒", "🤧", "😷", "🤕", "🥴", "💊"] },
+    "travel": { "desc": "trip holiday", "emojis": ["✈️", "🏖️", "🌍", "🧳", "📍", "🚗"] },
+    "agree": { "desc": "ok yes", "emojis": ["👍", "👌", "✅", "🤝", "🫡", "💯"] },
+    "surprised": { "desc": "shocked wow", "emojis": ["😮", "😲", "🤯", "😳", "👀", "😱"] },
+    "awkward": { "desc": "embarrassed oops", "emojis": ["😬", "🙈", "🤦", "😅", "🫣", "😳"] },
+    "support": { "desc": "encourage hope", "emojis": ["💪", "🤞", "🫂", "❤️", "✨", "🙌"] },
+    "greeting": { "desc": "hello bye", "emojis": ["👋", "😊", "🤗", "🙌", "✌️", "😄"] },
+    "neutral": { "desc": "plain", "emojis": ["🙂", "👍", "👌", "😊", "✌️", "👀"] }
+  }
+}

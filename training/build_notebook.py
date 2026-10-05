@@ -1,0 +1,564 @@
+#!/usr/bin/env python3
+"""Build training/kaggle/laya_emoji_train.ipynb (the Kaggle training notebook) for a given repo commit.
+
+  python3 training/build_notebook.py <commit> [--smoke]   # commit must be pushed; --smoke = quick 4,000-example test run
+"""
+import json
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+COMMIT = sys.argv[1] if len(sys.argv) > 1 else "main"
+SMOKE = "--smoke" in sys.argv
+MINI = "--mini" in sys.argv     # distil Emojet-v1 into a half-depth student
+LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
+
+import base64 as _b64, gzip as _gz
+_FILES = ["labels/emoji-catalog.json", "labels/tones.json", "training/data/goemotions_map.json",
+          "training/data/seeds.jsonl", "training/data/eval_sets.json"]
+EMBED = _b64.b64encode(_gz.compress(json.dumps({f: (ROOT / f).read_text(encoding="utf-8") for f in _FILES}).encode())).decode()
+
+cells = []
+
+
+def md(text):
+    cells.append({"cell_type": "markdown", "metadata": {}, "source": text.strip()})
+
+
+def code(text):
+    cells.append({"cell_type": "code", "metadata": {}, "execution_count": None, "outputs": [], "source": text.strip()})
+
+
+md(f"""
+# Emojet — training **{"Emojet-v1-mini (distilled)" if MINI else "Emojet-v1"}**
+
+Fine-tunes [Laya](https://huggingface.co/convaiinnovations/laya)'s encoder (ModernBERT-large, 28 layers, Apache-2.0) into one model that reads a **whole message** (plus the message being replied to) and outputs, in a single pass:
+
+| Group | Outputs |
+|---|---|
+| emojis | 1,923 — every distinct emoji of Unicode 18.0 (skin tones applied by the app) |
+| tones | 46 tones of voice (sarcastic, empathetic, condescending, …) |
+| styles | 4 communication styles (assertive, passive, aggressive, passive-aggressive) |
+| dimensions | 4 sliders (funny↔serious, formal↔casual, respectful↔irreverent, enthusiastic↔matter-of-fact) |
+
+Repo: https://github.com/subhadeeproy3902/emojet (data files from commit `{COMMIT[:10]}`). Plan: `docs/TRAINING.md`.
+
+**Baseline to beat (untrained Laya, mood labels, laptop):** right mood first try 18/23, top-3 22/23; tone top-3 18/25; style 6/13; Banglish "Bhai ami khete jacchi, pore kotha bolchi" → 👋😊🤗🙌✌️😄 (misses the food).
+""")
+
+md("## 1. Settings")
+code(f"""
+REPO, COMMIT = "subhadeeproy3902/emojet", "{COMMIT}"
+EMBEDDED_B64 = "{EMBED}"
+LAYA_REV = "7b928d828b7b0e022f929d9bd2e44165aa270148"      # convaiinnovations/laya, same as the GGUF we run on phones
+LLAMA_CPP_COMMIT = "{LLAMA_CPP_COMMIT}"
+SMOKE = {SMOKE}                                            # True = quick end-to-end test on 4,000 examples
+MINI = {MINI}                                              # True = distil Emojet-v1 into Emojet-v1-mini
+NAME = "emojet-v1-mini" if MINI else "emojet-v1"
+KEEP = [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25]  # teacher layers kept (every 3rd = global attention, pattern preserved)
+KD_T, KD_W, SUP_W = 2.0, 1.0, 0.5
+MAX_LEN, BATCH, EPOCHS = 64, 64, (1 if SMOKE else (2 if MINI else 3))
+LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
+TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
+TIME_BUDGET_H = 7.0                                        # stop training early if a run gets this long
+SEED = 42
+# The exact text the model sees. Apps must build the same string (shared/laya-emoji.json).
+def fmt(draft, reply=None):
+    return (f"replying to: {{reply.strip()}}\\n" if reply else "") + f"my message: {{draft.strip()}}"
+
+import json, math, os, random, re, subprocess, sys, time, urllib.request
+import numpy as np, torch, torch.nn.functional as F
+random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
+import transformers, datasets
+print("torch", torch.__version__, "| transformers", transformers.__version__, "| datasets", datasets.__version__)
+print("GPU:", torch.cuda.get_device_name(0), round(torch.cuda.get_device_properties(0).total_memory / 1e9, 1), "GB")
+T_START = time.time()
+""")
+
+md("## 2. Label space (from the repo's label files, embedded below)")
+code("""
+# Data files are embedded in the notebook (works while the repo is private).
+import base64, gzip
+EMBEDDED = json.loads(gzip.decompress(base64.b64decode(EMBEDDED_B64)).decode("utf-8"))
+def get(path):
+    return EMBEDDED[path]
+
+catalog  = json.loads(get("labels/emoji-catalog.json"))["emojis"]
+tones_cfg = json.loads(get("labels/tones.json"))
+ge_map   = json.loads(get("training/data/goemotions_map.json"))
+seeds    = [json.loads(l) for l in get("training/data/seeds.jsonl").splitlines() if l.strip()]
+evals    = json.loads(get("training/data/eval_sets.json"))
+
+EMOJIS = [e["e"] for e in catalog]
+TONES  = list(tones_cfg["tones"])
+STYLES = list(tones_cfg["styles"]["options"])
+DIMS   = ["funny_serious", "formal_casual", "respectful_irreverent", "enthusiastic_matter_of_fact"]
+LABELS = EMOJIS + [f"tone:{t}" for t in TONES] + [f"style:{s}" for s in STYLES] + [f"dim:{d}" for d in DIMS]
+NE, NT, NS, ND = len(EMOJIS), len(TONES), len(STYLES), len(DIMS)
+OFF_T, OFF_S, OFF_D = NE, NE + NT, NE + NT + NS
+N_LABELS = len(LABELS)
+TONE_IDX = {t: i for i, t in enumerate(TONES)}
+STYLE_IDX = {s: i for i, s in enumerate(STYLES)}
+print(f"{NE} emojis + {NT} tones + {NS} styles + {ND} dims = {N_LABELS} outputs; {len(seeds)} seeds")
+
+import regex
+SKIN = {chr(c) for c in range(0x1F3FB, 0x1F400)}
+def norm(e): return "".join(ch for ch in e if ch not in SKIN and ch != "\\ufe0f")
+E_INDEX = {}
+for i, e in enumerate(EMOJIS):
+    E_INDEX.setdefault(norm(e), i)
+
+def emoji_ids(s):
+    out = []
+    for g in regex.findall(r"\\X", s or ""):
+        i = E_INDEX.get(norm(g))
+        if i is not None and i not in out:
+            out.append(i)
+    return out
+
+def strip_emojis(s):
+    return re.sub(r"\\s+", " ", "".join(g for g in regex.findall(r"\\X", s or "")
+                                       if not (norm(g) in E_INDEX and any(ord(c) > 0x2000 for c in g)))).strip()
+
+print(emoji_ids("party 🎉🥳 👍🏽 ❤️"), strip_emojis("party 🎉🥳 tonight 👍🏽"))
+""")
+
+md("""
+## 3. Training data
+
+Every example says which outputs it teaches (`emo`, `tones`, `style`, `dims`); outputs it doesn't know about are masked out of the loss. Sources (all licences allow this use; non-commercial / unlicensed data is excluded):
+
+| Source | Teaches | Licence |
+|---|---|---|
+| emojinize-multilingual | things/concepts → emojis, 14 languages incl. Hindi | CC-BY-4.0 |
+| GoEmotions (27 emotions, Reddit) | feelings → tones + emojis (`goemotions_map.json`) | Apache-2.0 |
+| Hinglish/English sarcasm headlines (BM2002) | sarcastic | CC-BY-4.0 |
+| SemEval-2018 irony tweets (Natural Instructions task 386) | sarcastic | Apache-2.0 |
+| Stanford politeness | respectful ↔ rude | MIT (orig. CC-BY-4.0) |
+| Pavlick formality | formal ↔ casual | CC-BY-3.0 |
+| Jigsaw toxicity | aggressive, rude, angry | Apache-2.0 |
+| Unicode CLDR names/keywords | at least a few examples for every emoji | Unicode-3.0 |
+| EmoJet seeds (hand-written, English/Hinglish/Banglish) | styles, hard tones, chat | ours |
+| Synthetic replies | short drafts ("same", "lol", "yes!!") must follow the replied-to message | built here |
+""")
+code("""
+from datasets import load_dataset
+ex = []          # dict(text, reply, emo, tones, style, dims, src)
+def add(text, src, reply=None, emo=None, tones=None, style=None, dims=None):
+    text = strip_emojis(text)
+    if text:
+        ex.append(dict(text=text[:600], reply=strip_emojis(reply)[:300] if reply else None, emo=emo or None,
+                       tones=tones or None, style=style, dims=dims or None, src=src))
+
+# emojinize: sentences (all emojis of their spans) + a sample of spans on their own
+emz = load_dataset("yagizgencer/emojinize-multilingual", "all")
+span_pool = []
+for r in emz["train"]:
+    ids_all = []
+    for sp in r["spans"]:
+        ids = emoji_ids(sp["emojis"])
+        if ids:
+            span_pool.append((sp["text"], ids))
+            ids_all += [i for i in ids if i not in ids_all]
+    if ids_all:
+        add(r["sentence"], "emojinize", emo=ids_all)
+random.shuffle(span_pool)
+for t, ids in span_pool[:90_000]:
+    add(t, "emojinize-span", emo=ids)
+
+# GoEmotions -> tones + emojis
+ge = load_dataset("google-research-datasets/go_emotions", "simplified")
+GE_LABELS, GE = ge_map["labels"], ge_map["map"]
+GE_TONES = sorted({TONE_IDX[t] for v in GE.values() for t in v["tones"]})
+def ge_targets(labels):
+    names = [GE_LABELS[i] for i in labels]
+    pos = {TONE_IDX[t] for n in names for t in GE[n]["tones"]}
+    emo = []
+    for n in names:
+        emo += [i for i in emoji_ids(GE[n]["emojis"]) if i not in emo]
+    return {i: float(i in pos) for i in GE_TONES}, emo
+for r in ge["train"]:
+    tones, emo = ge_targets(r["labels"])
+    add(r["text"], "goemotions", emo=emo, tones=tones)
+
+# sarcasm: English + Hindi-English code-mixed headlines
+import pandas as pd
+from huggingface_hub import hf_hub_download
+SARC = TONE_IDX["sarcastic"]
+for f, col in [("training_data_english.xlsx", "headline"), ("fine-tuning_data_hinglish.xlsx", "cm_headline")]:
+    df = pd.read_excel(hf_hub_download("BM2002/hinglish-sarcasm-dataset", f, repo_type="dataset"))
+    for t, y in zip(df[col], df["is_sarcastic"]):
+        add(str(t), "sarcasm-headlines", tones={SARC: float(y)})
+sarc_test = pd.read_excel(hf_hub_download("BM2002/hinglish-sarcasm-dataset", "testing_data_hinglish.xlsx", repo_type="dataset"))
+
+# irony tweets (Natural Instructions task 386 = SemEval-2018 task 3)
+try:
+    irony = load_dataset("Lots-of-LoRAs/task386_semeval_2018_task3_irony_detection")["train"]
+    n0 = len(ex)
+    for r in irony:
+        m = re.search(r"Input:\\s*(.*?)\\s*Output:", r["input"], re.S)
+        y = r["output"][0] if isinstance(r["output"], list) else r["output"]
+        if m and y.strip().lower() in ("ironic", "not"):
+            add(m.group(1), "irony-tweets", tones={SARC: float(y.strip().lower() == "ironic")})
+    print("irony tweets:", len(ex) - n0)
+except Exception as e:
+    print("irony tweets skipped:", repr(e)[:200])
+
+# politeness
+pol = load_dataset("Cleanlab/stanford-politeness", data_files={"train": "fine-tuning/train.csv"})["train"]  # repo mixes CSV layouts
+RESP, RUDE = TONE_IDX["respectful"], TONE_IDX["rude"]
+for r in pol:
+    c = r["completion"].strip().lower()
+    if c in ("polite", "impolite", "neutral"):
+        tones = {"polite": {RESP: 1.0, RUDE: 0.0}, "impolite": {RESP: 0.0, RUDE: 1.0}, "neutral": {RUDE: 0.0}}[c]
+        add(r["prompt"].replace("Question:", "").strip(), "politeness", tones=tones,
+            dims={2: {"polite": 0.1, "neutral": 0.4, "impolite": 0.9}[c]})
+
+# formality (avg_score -3 informal .. +3 formal)
+FORMAL = TONE_IDX["formal"]
+for r in load_dataset("osyvokon/pavlick-formality-scores")["train"]:
+    s = r["avg_score"]
+    tones = {FORMAL: 1.0} if s > 1.0 else ({FORMAL: 0.0} if s < -1.0 else None)
+    add(r["sentence"], "formality", tones=tones, dims={1: min(1.0, max(0.0, (3.0 - s) / 6.0))})
+
+# toxicity
+jig = load_dataset("tasksource/jigsaw_toxicity")["train"].shuffle(seed=SEED)
+AGG, ANG = TONE_IDX["aggressive"], TONE_IDX["angry"]
+n_clean = n_tox = 0
+for r in jig:
+    tox = r["toxic"] or r["severe_toxic"] or r["threat"]
+    if tox and n_tox < 15_000:
+        n_tox += 1
+        add(r["comment_text"], "toxicity", emo=emoji_ids("😡🤬💢"),
+            tones={AGG: float(bool(r["severe_toxic"] or r["threat"] or r["insult"])), RUDE: float(bool(r["obscene"] or r["insult"])), ANG: 1.0})
+    elif not tox and n_clean < 10_000:
+        n_clean += 1
+        add(r["comment_text"], "toxicity", tones={AGG: 0.0, RUDE: 0.0, ANG: 0.0})
+    if n_tox >= 15_000 and n_clean >= 10_000:
+        break
+
+# CLDR: name + keywords for every emoji, so none of the 1,923 is never seen
+for i, e in enumerate(catalog):
+    add(e["name"].replace("flag: ", "flag of "), "cldr", emo=[i])
+    for k in e["kw"][:2]:
+        add(k, "cldr", emo=[i])
+
+# seeds (x25 with light variations)
+def seed_targets(s):
+    # hand-written: tones not listed are absent -> every tone gets negative examples too
+    tones = {i: 0.0 for i in range(NT)}
+    tones.update({TONE_IDX[t]: 1.0 for t in s.get("tones", []) if t in TONE_IDX})
+    return emoji_ids(s["emojis"]), tones, STYLE_IDX.get(s.get("style"))
+for s in seeds:
+    emo, tones, style = seed_targets(s)
+    for k in range(25):
+        t = s["text"]
+        if k % 3 == 1: t = t.lower()
+        if k % 3 == 2: t = re.sub(r"[!?.]+$", "", t)
+        add(t, "seeds", reply=s.get("reply"), emo=emo, tones=tones, style=style)
+
+# synthetic replies: an uninformative draft takes its emojis from the replied-to message
+GENERIC = ["same", "same here", "true", "fr", "exactly", "yes!!", "omg", "wow", "haha", "lol", "hahaha", "no way",
+           "really?", "nice", "sahi hai", "ekdom", "haan", "accha", "seriously?", "ikr", "damn", "yesss", "sotti?", "uff"]
+pool = [x for x in ex if x["src"] in ("goemotions", "seeds", "emojinize") and x["emo"] and len(x["text"]) < 160]
+for x in random.sample(pool, 15_000):
+    add(random.choice(GENERIC), "reply-synth", reply=x["text"], emo=x["emo"], tones=x["tones"])
+for x in random.sample(pool, 5_000):       # informative draft + unrelated reply: the draft wins
+    y = random.choice(pool)
+    add(x["text"], "reply-synth", reply=y["text"], emo=x["emo"], tones=x["tones"], style=x["style"])
+
+random.shuffle(ex)
+if SMOKE:
+    ex = ex[:4000]
+from collections import Counter
+print(f"{len(ex):,} training examples")
+for src, n in Counter(x["src"] for x in ex).most_common():
+    print(f"  {src:18s} {n:7,d}")
+covered = {i for x in ex if x["emo"] for i in x["emo"]}
+print(f"emojis with at least one example: {len(covered)}/{NE}")
+print("examples:", [(x["text"][:50], [EMOJIS[i] for i in (x["emo"] or [])][:4]) for x in ex[:5]])
+""")
+
+md("## 4. Model: Laya's encoder + a new 1,977-output layer")
+code("""
+from huggingface_hub import snapshot_download
+from safetensors.torch import load_file
+from transformers import AutoConfig, AutoTokenizer, ModernBertForSequenceClassification
+
+LAYA = snapshot_download("convaiinnovations/laya", revision=LAYA_REV,
+                         allow_patterns=["encoder/*", "tokenizer/*", "model.safetensors", "*.json"])
+tok = AutoTokenizer.from_pretrained(f"{LAYA}/tokenizer")
+cfg = AutoConfig.from_pretrained(f"{LAYA}/encoder")
+cfg.architectures = ["ModernBertForSequenceClassification"]
+cfg.num_labels = N_LABELS
+cfg.id2label = {i: l for i, l in enumerate(LABELS)}
+cfg.label2id = {l: i for i, l in enumerate(LABELS)}
+cfg.classifier_pooling = "mean"          # llama.cpp uses mean pooling for ModernBERT classifiers
+cfg.problem_type = "multi_label_classification"
+cfg.reference_compile = False
+model = ModernBertForSequenceClassification(cfg)
+sd = load_file(f"{LAYA}/model.safetensors")
+res = model.model.load_state_dict({k[8:]: v for k, v in sd.items() if k.startswith("encoder.")}, strict=False)
+assert not res.missing_keys and not res.unexpected_keys, res
+del sd
+teacher = None
+if MINI:
+    import glob, copy
+    tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
+    teacher = ModernBertForSequenceClassification.from_pretrained(tdir, torch_dtype=torch.float16).cuda().eval()
+    for prm in teacher.parameters():
+        prm.requires_grad_(False)
+    scfg = copy.deepcopy(teacher.config)
+    scfg.num_hidden_layers = len(KEEP)
+    model = ModernBertForSequenceClassification(scfg)
+    tsd = {k: v.float() for k, v in teacher.state_dict().items()}
+    ssd = {}
+    for k in model.state_dict():
+        if k.startswith("model.layers."):
+            j = int(k.split(".")[2])
+            ssd[k] = tsd[k.replace(f"model.layers.{j}.", f"model.layers.{KEEP[j]}.", 1)]
+        else:
+            ssd[k] = tsd[k]
+    model.load_state_dict(ssd, strict=True)
+    print(f"teacher Emojet-v1 from {tdir}; student keeps layers {KEEP}")
+model.cuda()
+print(f"{sum(p.numel() for p in model.parameters()) / 1e6:.1f} M parameters in {NAME}")
+""")
+
+md("## 5. Batches (similar lengths together = fast) and loss")
+code("""
+def encode(xs):
+    enc = tok([fmt(x["text"], x["reply"]) for x in xs], truncation=True, max_length=MAX_LEN)
+    return enc["input_ids"]
+t0 = time.time()
+ids_all = []
+for i in range(0, len(ex), 20_000):
+    ids_all += encode(ex[i:i + 20_000])
+print(f"tokenized in {time.time() - t0:.0f} s; median length {int(np.median([len(i) for i in ids_all]))} tokens")
+
+def make_batches(n, bs, rng):
+    order = rng.permutation(n)
+    chunks = [order[i:i + bs * 50] for i in range(0, n, bs * 50)]
+    batches = []
+    for ch in chunks:
+        ch = sorted(ch, key=lambda j: len(ids_all[j]))
+        batches += [ch[i:i + bs] for i in range(0, len(ch), bs)]
+    rng.shuffle(batches)
+    return batches
+
+def collate(idx):
+    L = max(len(ids_all[j]) for j in idx)
+    B = len(idx)
+    inp = torch.full((B, L), tok.pad_token_id, dtype=torch.long)
+    att = torch.zeros((B, L), dtype=torch.long)
+    emo_t = torch.zeros((B, NE)); emo_m = torch.zeros(B, dtype=torch.bool)
+    tone_t = torch.zeros((B, NT)); tone_m = torch.zeros((B, NT))
+    style = torch.full((B,), -1, dtype=torch.long)
+    dim_t = torch.zeros((B, ND)); dim_m = torch.zeros((B, ND))
+    for b, j in enumerate(idx):
+        s = ids_all[j]; x = ex[j]
+        inp[b, :len(s)] = torch.tensor(s); att[b, :len(s)] = 1
+        if x["emo"]:
+            emo_t[b, x["emo"]] = 1.0 / len(x["emo"]); emo_m[b] = True
+        for k, v in (x["tones"] or {}).items():
+            tone_t[b, k] = v; tone_m[b, k] = 1
+        if x["style"] is not None:
+            style[b] = x["style"]
+        for k, v in (x["dims"] or {}).items():
+            dim_t[b, k] = v; dim_m[b, k] = 1
+    return dict(inp=inp, att=att, emo_t=emo_t, emo_m=emo_m, tone_t=tone_t, tone_m=tone_m, style=style, dim_t=dim_t, dim_m=dim_m)
+
+def loss_fn(logits, b):
+    l = logits.float(); parts = {}; total = 0.0
+    if b["emo_m"].any():   # several right emojis per message: soft-target cross-entropy over all 1,923
+        e = -(b["emo_t"][b["emo_m"]] * torch.log_softmax(l[b["emo_m"], :NE], -1)).sum(-1).mean()
+        total = total + e; parts["emoji"] = e.item()
+    if b["tone_m"].sum() > 0:
+        t = (F.binary_cross_entropy_with_logits(l[:, OFF_T:OFF_S], b["tone_t"], reduction="none") * b["tone_m"]).sum() / b["tone_m"].sum()
+        total = total + TONE_W * t; parts["tone"] = t.item()
+    m = b["style"] >= 0
+    if m.any():
+        s = F.cross_entropy(l[m, OFF_S:OFF_D], b["style"][m])
+        total = total + STYLE_W * s; parts["style"] = s.item()
+    if b["dim_m"].sum() > 0:
+        d = (F.binary_cross_entropy_with_logits(l[:, OFF_D:], b["dim_t"], reduction="none") * b["dim_m"]).sum() / b["dim_m"].sum()
+        total = total + DIM_W * d; parts["dim"] = d.item()
+    return total, parts
+""")
+
+md("## 6. Evaluation helpers (same test messages as the laptop tests; never trained on)")
+code("""
+@torch.no_grad()
+def predict(drafts, replies=None, bs=128):
+    model.eval()
+    replies = replies or [None] * len(drafts)
+    out = []
+    for i in range(0, len(drafts), bs):
+        enc = tok([fmt(d, r) for d, r in zip(drafts[i:i + bs], replies[i:i + bs])], truncation=True,
+                  max_length=MAX_LEN, padding=True, return_tensors="pt").to("cuda")
+        with torch.autocast("cuda", dtype=torch.float16):
+            out.append(model(input_ids=enc["input_ids"], attention_mask=enc["attention_mask"]).logits.float().cpu())
+    model.train()
+    return torch.cat(out)
+
+def top_emojis(row, k=6): return [EMOJIS[i] for i in row[:NE].topk(k).indices.tolist()]
+def top_tones(row, k=3):
+    p = torch.sigmoid(row[OFF_T:OFF_S]); idx = p.topk(k).indices.tolist()
+    return [(TONES[i], round(p[i].item(), 2)) for i in idx]
+def style_of(row):
+    p = torch.softmax(row[OFF_S:OFF_D], -1); i = int(p.argmax())
+    return STYLES[i], round(p[i].item(), 2)
+
+def evaluate(verbose=False):
+    r = {}
+    ec = evals["emoji_cases"]
+    lg = predict([c["text"] for c in ec], [c["reply"] for c in ec])
+    hits = 0
+    for c, row in zip(ec, lg):
+        top = top_emojis(row); ok = {norm(e) for e in c["ok_emojis"]}
+        h = any(norm(e) in ok for e in top); hits += h
+        if verbose: print(f"{'✓' if h else '✗'} {c['name']:18s} {''.join(top)}   {c['text'][:60]}")
+    r["emoji_cases_hit@6"] = f"{hits}/{len(ec)}"
+    tc = evals["tone_cases"]
+    lg = predict([c["text"] for c in tc])
+    th = sh = sn = 0
+    for c, row in zip(tc, lg):
+        tt = [t for t, _ in top_tones(row)]; st, _ = style_of(row)
+        th += bool(set(tt) & set(c["ok_tones"]))
+        if c["ok_styles"]: sn += 1; sh += st in c["ok_styles"]
+        if verbose: print(f"{'✓' if set(tt) & set(c['ok_tones']) else '✗'} tones={tt} style={st:18s} {c['text'][:55]}")
+    r["tone_top3"] = f"{th}/{len(tc)}"; r["style"] = f"{sh}/{sn}"
+    sub = [x for x in emz["test"].select(range(min(1500, len(emz["test"]))))]
+    gold = [set(emoji_ids("".join(sp["emojis"] for sp in x["spans"]))) for x in sub]
+    lg = predict([strip_emojis(x["sentence"]) for x in sub])
+    tops = [set(row[:NE].topk(6).indices.tolist()) for row in lg]
+    r["emojinize_test_hit@6"] = round(float(np.mean([bool(t & g) for t, g in zip(tops, gold) if g])), 3)
+    r["distinct_emojis_suggested"] = len(set().union(*tops))
+    gt = [x for x in ge["test"].select(range(2000)) if 27 not in x["labels"]]
+    lg = predict([x["text"] for x in gt])
+    r["goemotions_emoji_hit@6"] = round(float(np.mean([bool(set(row[:NE].topk(6).indices.tolist()) & set(ge_targets(x["labels"])[1])) for x, row in zip(gt, lg)])), 3)
+    lg = predict([str(t) for t in sarc_test["cm_headline"]])
+    r["hinglish_sarcasm_acc"] = round(float(np.mean([(torch.sigmoid(row[OFF_T + SARC]) > 0.5).item() == bool(y) for row, y in zip(lg, sarc_test["is_sarcastic"])])), 3)
+    return r
+""")
+
+md("## 7. Train")
+code("""
+head_params = [p for n, p in model.named_parameters() if not n.startswith("model.")]
+enc_params = [p for n, p in model.named_parameters() if n.startswith("model.")]
+opt = torch.optim.AdamW([{"params": enc_params, "lr": LR_ENCODER}, {"params": head_params, "lr": LR_HEAD}], weight_decay=0.01)
+rng = np.random.RandomState(SEED)
+steps_per_epoch = math.ceil(len(ex) / BATCH)
+total_steps = steps_per_epoch * EPOCHS
+warm = int(WARMUP * total_steps)
+sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, warm)) * max(0.0, (total_steps - s) / max(1, total_steps - warm)))
+scaler = torch.amp.GradScaler("cuda")
+history, step, t_train = [], 0, time.time()
+print(f"{len(ex):,} examples, {steps_per_epoch:,} steps/epoch, {EPOCHS} epochs")
+model.train()
+stop = False
+for epoch in range(EPOCHS):
+    run = Counter(); cnt = Counter()
+    for bi, idx in enumerate(make_batches(len(ex), BATCH, rng)):
+        b = {k: v.cuda(non_blocking=True) for k, v in collate(idx).items()}
+        with torch.autocast("cuda", dtype=torch.float16):
+            logits = model(input_ids=b["inp"], attention_mask=b["att"]).logits
+            if teacher is not None:
+                with torch.no_grad():
+                    tl = teacher(input_ids=b["inp"], attention_mask=b["att"]).logits.float()
+        loss, parts = loss_fn(logits, b)
+        if teacher is not None:          # learn the teacher's full answer on every example
+            sl = logits.float()
+            kd = F.kl_div(torch.log_softmax(sl[:, :NE] / KD_T, -1), torch.softmax(tl[:, :NE] / KD_T, -1), reduction="batchmean") * KD_T ** 2
+            kd = kd + F.binary_cross_entropy_with_logits(sl[:, OFF_T:OFF_S], torch.sigmoid(tl[:, OFF_T:OFF_S]))
+            kd = kd + F.kl_div(torch.log_softmax(sl[:, OFF_S:OFF_D], -1), torch.softmax(tl[:, OFF_S:OFF_D], -1), reduction="batchmean")
+            kd = kd + F.binary_cross_entropy_with_logits(sl[:, OFF_D:], torch.sigmoid(tl[:, OFF_D:]))
+            loss = SUP_W * loss + KD_W * kd
+            parts["kd"] = kd.item()
+        opt.zero_grad(set_to_none=True)
+        scaler.scale(loss).backward()
+        scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        scaler.step(opt); scaler.update(); sched.step(); step += 1
+        for k, v in parts.items(): run[k] += v; cnt[k] += 1
+        if step % 500 == 0:
+            avg = {k: round(run[k] / cnt[k], 4) for k in run}
+            history.append(dict(step=step, epoch=epoch, **avg))
+            el = time.time() - t_train
+            print(f"epoch {epoch + 1} step {step:,}/{total_steps:,}  {avg}  {el / 60:.0f} min, ~{el / step * (total_steps - step) / 60:.0f} min left", flush=True)
+            run.clear(); cnt.clear()
+        if (time.time() - T_START) / 3600 > TIME_BUDGET_H:
+            print("time budget reached, stopping early"); stop = True; break
+    print(f"--- after epoch {epoch + 1}:", evaluate(), flush=True)
+    if stop: break
+print(f"training took {(time.time() - t_train) / 60:.0f} min")
+""")
+
+md("## 8. Results")
+code("""
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots(figsize=(9, 4))
+for key in ("emoji", "tone", "style", "dim", "kd"):
+    pts = [(h["step"], h[key]) for h in history if key in h]
+    if pts: ax.plot(*zip(*pts), label=key)
+ax.set_xlabel("step"); ax.set_ylabel("loss"); ax.set_yscale("log"); ax.legend(); ax.set_title(f"{NAME} training loss")
+plt.tight_layout(); plt.savefig("/kaggle/working/loss.png", dpi=120); plt.show()
+final = evaluate(verbose=True)
+print(json.dumps(final, indent=1))
+""")
+
+md("## 9. Try it — edit the sentences and run this cell")
+code("""
+def demo(text, reply=None):
+    row = predict([text], [reply])[0]
+    print(("↪ " + reply + "\\n") if reply else "", text)
+    print("   emojis:", " ".join(top_emojis(row, 8)))
+    print("   tones :", top_tones(row), "| style:", style_of(row))
+for t in ["Bhai ami khete jacchi, pore kotha bolchi", "Happy birthday bro!! have an amazing year",
+          "oh great, another monday meeting that could have been an email", "Fine, I'll do it your way, since you always know best.",
+          "landed in Goa finally, beach time", "India won the final!!!", "it's fine. really. I'm fine."]:
+    demo(t)
+demo("yes!!", reply="do you want to come to the concert with me?")
+demo("same", reply="I'm so done with this week")
+""")
+
+md("## 10. Save: Hugging Face weights, labels, reference outputs, and the GGUF file the phone runs")
+code("""
+OUT = f"/kaggle/working/{NAME}"
+model.eval()
+ref_texts = [("Happy birthday bro!! have an amazing year", None), ("Bhai ami khete jacchi, pore kotha bolchi", None),
+             ("yes!!", "do you want to come to the concert with me?"), ("it's fine. really. I'm fine.", None)]
+ref = []
+for d, r in ref_texts:
+    enc = tok(fmt(d, r), return_tensors="pt").to("cuda")
+    with torch.no_grad():
+        row = model.float()(**{k: v for k, v in enc.items() if k in ("input_ids", "attention_mask")}).logits[0].cpu()
+    ref.append(dict(text=fmt(d, r), input_ids=enc["input_ids"][0].tolist(), logits=[round(v, 4) for v in row.tolist()],
+                    top_emojis=top_emojis(row), top_tones=top_tones(row), style=style_of(row)))
+model.half().save_pretrained(OUT, safe_serialization=True)
+tok.save_pretrained(OUT)
+meta = dict(name=NAME, version=1, base="convaiinnovations/laya@" + LAYA_REV, labels=LABELS,
+            groups=dict(emojis=[0, NE], tones=[OFF_T, OFF_S], styles=[OFF_S, OFF_D], dims=[OFF_D, N_LABELS]),
+            input_format="replying to: {reply}\\nmy message: {draft}  (first line only when replying)",
+            max_len=MAX_LEN, pooling="mean", metrics=final, data_commit=COMMIT, history=history)
+json.dump(meta, open(f"{OUT}/emojet.json", "w"), ensure_ascii=False)
+json.dump(ref, open("/kaggle/working/reference.json", "w"), ensure_ascii=False)
+print(os.listdir(OUT))
+
+# GGUF for llama.cpp (same llama.cpp commit as the phone engine)
+try:
+    subprocess.run(["git", "clone", "-q", "https://github.com/ggml-org/llama.cpp", "/tmp/llama.cpp"], check=True)
+    subprocess.run(["git", "-C", "/tmp/llama.cpp", "checkout", "-q", LLAMA_CPP_COMMIT], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "/tmp/llama.cpp/gguf-py"], check=True)
+    r = subprocess.run([sys.executable, "/tmp/llama.cpp/convert_hf_to_gguf.py", OUT, "--outtype", "f16",
+                        "--outfile", f"/kaggle/working/{NAME}-f16.gguf"], capture_output=True, text=True)
+    print(r.stdout[-1500:], r.stderr[-2500:])
+except Exception as e:
+    print("GGUF conversion failed (weights are saved; convert later):", repr(e))
+print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
+""")
+
+nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+                                   "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
+out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else "emojet_v1") + ("_smoke" if SMOKE else "") + ".ipynb")
+out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
+print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")

@@ -1,0 +1,15 @@
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index 809be94..2404e12 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -2223,7 +2223,9 @@ private:
+         res->n_tokens  = slot.task->n_tokens();
+         res->res_type  = slot.task->params.res_type;
+ 
+-        const int n_embd_out = llama_model_n_embd_out(model_tgt);
++        // classifier models (rank pooling) produce n_cls_out scores per sequence, not n_embd values
++        const int n_cls_out  = llama_pooling_type(slot.ctx_tgt) == LLAMA_POOLING_TYPE_RANK ? (int) llama_model_n_cls_out(model_tgt) : 0;
++        const int n_embd_out = n_cls_out > 0 ? n_cls_out : llama_model_n_embd_out(model_tgt);
+ 
+         std::vector<float> embd_res(n_embd_out, 0.0f);
+ 
