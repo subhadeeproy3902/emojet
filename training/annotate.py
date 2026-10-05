@@ -28,7 +28,7 @@ TAXONOMY_B64 = "__TAXONOMY__"
 LLAMA_CPP_COMMIT = "__LLAMA_CPP_COMMIT__"
 MODEL_REPO, MODEL_FILE = "unsloth/Qwen3.6-35B-A3B-GGUF", "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
 TIME_BUDGET_H = 0.6 if SMOKE else 6.0
-PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 70_000, "hi": 45_000, "en": 45_000}
+PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 45_000, "hi": 25_000, "en": 20_000}
 BATCH, SLOTS = 12, 16
 
 T0 = time.time()
