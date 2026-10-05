@@ -104,7 +104,7 @@ evals    = json.loads(get("training/data/eval_sets.json"))
 EMOJIS = [e["e"] for e in catalog]
 TONES  = list(tones_cfg["tones"])
 STYLES = list(tones_cfg["styles"]["options"])
-DIMS   = ["funny_serious", "formal_casual", "respectful_irreverent", "enthusiastic_matter_of_fact"]
+DIMS   = [k for k in tones_cfg["dimensions"] if k != "note"]
 LABELS = EMOJIS + [f"tone:{t}" for t in TONES] + [f"style:{s}" for s in STYLES] + [f"dim:{d}" for d in DIMS]
 NE, NT, NS, ND = len(EMOJIS), len(TONES), len(STYLES), len(DIMS)
 OFF_T, OFF_S, OFF_D = NE, NE + NT, NE + NT + NS
@@ -317,6 +317,32 @@ if REAL:
                        dims=None, src="real-long"))
     print(f"real examples: {len(ex) - n0:,} (test held out: {len(real_test):,})")
 
+# annotated real messages (emojet-annotate kernel): full-taxonomy tones, style, sliders; emojis the writer would add
+if REAL:
+    ann_files = sorted(glob.glob("/kaggle/input/**/annot/annotations.jsonl", recursive=True))
+    n0 = len(ex)
+    ann_test = []
+    for path in ann_files:
+        for line in open(path, encoding="utf-8"):
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            tones = {i: 0.3 for i in range(NT)}               # tones not picked: weak negatives (max 3 were picked)
+            for t in r.get("tones", []):
+                if t in TONE_IDX: tones[TONE_IDX[t]] = 1.0
+            tone_t = {i: (1.0 if v == 1.0 else 0.0) for i, v in tones.items()}
+            dims = {k: min(9, max(0, int(v))) / 9 for k, v in enumerate(r.get("axes", [])[:ND])}
+            gold = r.get("e") or []
+            silver = emoji_ids("".join(r.get("emojis", [])))
+            x = dict(text=r["t"], reply=None, emo=(gold or silver) or None, ew=(1.0 if gold else 0.5),
+                     tones=tone_t, tone_w=tones, style=STYLE_IDX.get(r.get("style")), dims=dims, src="annot-" + r["l"])
+            if hash(r["t"]) % 50 == 0:
+                ann_test.append(x)                            # 2% held out to measure tone/style agreement
+            else:
+                ex.append(x)
+    print(f"annotated examples: {len(ex) - n0:,} (+{len(ann_test):,} held out)")
+
 # seeds (x25 with light variations)
 def seed_targets(s):
     # hand-written: tones not listed are absent -> every tone gets negative examples too
@@ -377,9 +403,32 @@ assert not res.missing_keys and not res.unexpected_keys, res
 del sd
 teacher = None
 if RESUME or V2:
-    import glob
+    import glob, copy
     tdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/emojet.json", recursive=True))[0])
     model = ModernBertForSequenceClassification.from_pretrained(tdir, torch_dtype=torch.float32)
+    if model.config.num_labels != N_LABELS:
+        # the label set grew: keep the encoder and every known label's output row, add the new ones
+        old = model
+        old_idx = {l: int(i) for i, l in old.config.id2label.items()}
+        ncfg = copy.deepcopy(old.config)
+        ncfg.num_labels = N_LABELS
+        ncfg.id2label = {i: l for i, l in enumerate(LABELS)}
+        ncfg.label2id = {l: i for i, l in enumerate(LABELS)}
+        model = ModernBertForSequenceClassification(ncfg)
+        osd, nsd = old.state_dict(), model.state_dict()
+        for k in nsd:
+            if not k.startswith("classifier."):
+                nsd[k] = osd[k]
+        kept_rows = 0
+        for i, l in enumerate(LABELS):
+            j = old_idx.get(l)
+            if j is not None:
+                nsd["classifier.weight"][i] = osd["classifier.weight"][j]
+                nsd["classifier.bias"][i] = osd["classifier.bias"][j]
+                kept_rows += 1
+        model.load_state_dict(nsd)
+        del old, osd
+        print(f"label set grew {len(old_idx)} -> {N_LABELS}: {kept_rows} output rows kept, {N_LABELS - kept_rows} new")
     print(f"starting from {json.load(open(tdir + '/emojet.json')).get('name', 'Emojet')} at {tdir}")
 if MINI:
     import glob, copy
@@ -449,7 +498,7 @@ def collate(idx):
     B = len(idx)
     inp = torch.full((B, L), tok.pad_token_id, dtype=torch.long)
     att = torch.zeros((B, L), dtype=torch.long)
-    emo_t = torch.zeros((B, NE)); emo_m = torch.zeros(B, dtype=torch.bool)
+    emo_t = torch.zeros((B, NE)); emo_m = torch.zeros(B, dtype=torch.bool); emo_w = torch.ones(B)
     tone_t = torch.zeros((B, NT)); tone_m = torch.zeros((B, NT))
     style = torch.full((B,), -1, dtype=torch.long)
     dim_t = torch.zeros((B, ND)); dim_m = torch.zeros((B, ND))
@@ -457,14 +506,15 @@ def collate(idx):
         s = ids_all[j]; x = ex[j]
         inp[b, :len(s)] = torch.tensor(s); att[b, :len(s)] = 1
         if x["emo"]:
-            emo_t[b, x["emo"]] = 1.0 / len(x["emo"]); emo_m[b] = True
+            emo_t[b, x["emo"]] = 1.0 / len(x["emo"]); emo_m[b] = True; emo_w[b] = x.get("ew", 1.0)
+        tw = x.get("tone_w") or {}
         for k, v in (x["tones"] or {}).items():
-            tone_t[b, k] = v; tone_m[b, k] = 1
+            tone_t[b, k] = v; tone_m[b, k] = tw.get(k, 1.0)
         if x["style"] is not None:
             style[b] = x["style"]
         for k, v in (x["dims"] or {}).items():
             dim_t[b, k] = v; dim_m[b, k] = 1
-    return dict(inp=inp, att=att, emo_t=emo_t, emo_m=emo_m, tone_t=tone_t, tone_m=tone_m, style=style, dim_t=dim_t, dim_m=dim_m)
+    return dict(inp=inp, att=att, emo_t=emo_t, emo_m=emo_m, emo_w=emo_w, tone_t=tone_t, tone_m=tone_m, style=style, dim_t=dim_t, dim_m=dim_m)
 
 def loss_fn(logits, b):
     l = logits.float(); parts = {}; total = 0.0
@@ -472,7 +522,8 @@ def loss_fn(logits, b):
         le = l[b["emo_m"], :NE]
         if BALANCE_TAU:      # balanced softmax: train on logits + tau*log(prior) so the raw logits stay unbiased
             le = le + BALANCE_TAU * LOG_PRIOR
-        e = -(b["emo_t"][b["emo_m"]] * torch.log_softmax(le, -1)).sum(-1).mean()
+        w = b["emo_w"][b["emo_m"]]
+        e = (-(b["emo_t"][b["emo_m"]] * torch.log_softmax(le, -1)).sum(-1) * w).sum() / w.sum()
         total = total + e; parts["emoji"] = e.item()
     if b["tone_m"].sum() > 0:
         t = (F.binary_cross_entropy_with_logits(l[:, OFF_T:OFF_S], b["tone_t"], reduction="none") * b["tone_m"]).sum() / b["tone_m"].sum()
