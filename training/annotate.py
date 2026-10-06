@@ -24,10 +24,11 @@ import time
 import urllib.request
 
 SMOKE = __SMOKE__
+ROUND2 = __ROUND2__        # round 2: real messages that use slang/swearing (emojet-slang) + more Bengali/Hindi, skip round-1 texts
 TAXONOMY_B64 = "__TAXONOMY__"
 LLAMA_CPP_COMMIT = "__LLAMA_CPP_COMMIT__"
 MODEL_REPO, MODEL_FILE = "unsloth/Qwen3.6-35B-A3B-GGUF", "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
-TIME_BUDGET_H = 0.6 if SMOKE else 6.0
+TIME_BUDGET_H = 0.6 if SMOKE else (3.0 if ROUND2 else 6.0)
 PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 45_000, "hi": 25_000, "en": 20_000}
 BATCH, SLOTS = 12, 16
 
@@ -58,9 +59,30 @@ for name in ("train.jsonl.gz", "plain.jsonl.gz"):
             if r["l"] in pool and 3 <= len(r["t"]) <= 500:
                 pool[r["l"]].append(r)
 msgs = []
-for lang, rows in pool.items():
-    random.shuffle(rows)
-    msgs += rows[:PER_LANG[lang]]
+if ROUND2:
+    before = set()
+    for path in glob.glob("/kaggle/input/**/annot/annotations.jsonl", recursive=True):
+        for line in open(path, encoding="utf-8"):
+            try:
+                before.add(json.loads(line)["t"])
+            except ValueError:
+                pass
+    slang = []
+    for path in glob.glob("/kaggle/input/**/slang/targets.jsonl.gz", recursive=True):
+        slang += [json.loads(l) for l in gzip.open(path, "rt", encoding="utf-8")]
+    slang = [r for r in slang if r["t"] not in before]
+    slang.sort(key=lambda r: {"bn": 0, "hi": 1, "en": 2}.get(r["l"], 3))      # Banglish/Bengali first, English slang last
+    msgs = slang[: (300 if SMOKE else 32_000)]
+    taken = before | {r["t"] for r in msgs}
+    for lang, n in (("bn", 100 if SMOKE else 10_000), ("hi", 100 if SMOKE else 4_000)):
+        rows = [r for r in pool[lang] if r["t"] not in taken]
+        random.shuffle(rows)
+        msgs += rows[:n]
+    log(f"round 2: {len(before):,} done before, {len(slang):,} new slang messages")
+else:
+    for lang, rows in pool.items():
+        random.shuffle(rows)
+        msgs += rows[:PER_LANG[lang]]
 random.shuffle(msgs)
 log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.items()})
 

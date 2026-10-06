@@ -133,3 +133,27 @@ Model input text (training and every app must build exactly this): `replying to:
 - **mAP over emojis**, coverage (how many of the 1,923 emojis ever reach a top-6 on validation).
 - **Tone**: top-3 hit rate on `scripts/test-tones.py` + your messages (baseline untrained Laya: 18/25), per-tone F1 for the subtle ones (sarcastic, passive-aggressive, condescending, cynical, accusatory, defensive). **Style** accuracy (baseline 6/13).
 - Latency on laptop and phone; model size.
+
+## Round 2 (prepared 2026-10-06, run when the Kaggle GPU quota allows ~13 h)
+
+Continues the real-data model (public "Emojet v1" candidate) with slang/swearing and more Banglish/Hinglish.
+Run in this order; each step needs the previous one's output. Links: https://www.kaggle.com/code/subhadeep3902/<slug>
+
+| # | Kaggle notebook | Machine | Time | What |
+|---|---|---|---|---|
+| 1 | `emojet-slang` | CPU | ~20–40 min | slang/swear lexicons (EN, Hindi, Hinglish, Bengali, Banglish) + real messages using them + human labels of slang/abuse sets |
+| 2 | `emojet-annotate-2` | 2×T4 | ~3 h | tone/style/emoji labels for the slang messages (Banglish first) + 14k more Bengali/Hindi messages; round-1 texts skipped |
+| 3 | `emojet-v2-round2` | T4 | ~9.5 h | continue from `emojet-v2-real`: unseen half of the data, slang ×3, Bengali ×3, Hindi ×2, LR 1e-5 / 8e-5 |
+
+```bash
+# 1
+python3 training/build_slang.py && python3 scripts/kaggle.py push training/kaggle/emojet_slang.py emojet-slang --internet --source=subhadeep3902/emojet-data
+# 2 (after 1)
+python3 training/build_annotate.py --round2 && python3 scripts/kaggle.py push training/kaggle/emojet_annotate_round2.py emojet-annotate-2 --gpu --internet \
+    --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-slang --source=subhadeep3902/emojet-annotate
+# 3 (after 2)
+python3 training/build_notebook.py $(git rev-parse --short HEAD) --round2 && python3 scripts/kaggle.py push training/kaggle/emojet_v2_round2.ipynb emojet-v2-round2 --gpu --internet \
+    --source=subhadeep3902/emojet-v2-real --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-tones \
+    --source=subhadeep3902/emojet-slang --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2
+```
+Smoke-test step 1 first (`--smoke`, slug `emojet-slang-smoke`, a few minutes, CPU). Do not attach `emojet-v2` to step 3 (the starting model is found by its `emojet.json`).
