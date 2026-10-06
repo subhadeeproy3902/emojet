@@ -14,6 +14,7 @@ MINI = "--mini" in sys.argv     # distil Emojet-v1 into a half-depth student
 RESUME = "--resume" in sys.argv # continue training Emojet-v1 for one epoch (adds chat-object data)
 V2 = "--v2" in sys.argv         # Emojet-v2 (pre): from final v1, topic-in-chat data, balanced emoji loss
 REAL = "--real" in sys.argv     # Emojet-v2: from v2-pre + real messages (EN/HI/BN) from the emojet-data kernel
+ROUND2 = "--round2" in sys.argv # Emojet-v2 round 2: continue from emojet-v2-real, + slang data, more Banglish/Hinglish weight
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
 
 import base64 as _b64, gzip as _gz
@@ -60,6 +61,9 @@ MINI = {MINI}                                              # True = distil Emoje
 RESUME = {RESUME}                                          # True = continue Emojet-v1 for one epoch
 V2 = {V2}                                                  # True = train Emojet-v2 (pre) from the final v1
 REAL = {REAL}                                              # True = Emojet-v2 on real messages, from v2-pre
+ROUND2 = {ROUND2}                                          # True = continue Emojet-v2 (round 2): slang + more Banglish/Hinglish
+if ROUND2: REAL = True
+LANG_REPEAT = {{"bn": 3, "hi": 2, "en": 1}} if ROUND2 else {{"bn": 2, "hi": 1, "en": 1}}   # times each real message is seen
 if REAL: V2 = True                                         # keeps the v2 data (topic-in-chat) and loss
 NAME = "emojet-v1-mini" if MINI else ("emojet-v2" if V2 else "emojet-v1")
 BALANCE_TAU = 0.5 if REAL else (0.6 if V2 else 0.0)        # balanced softmax: frequent emojis stop crowding out specific ones
@@ -69,6 +73,8 @@ MAX_LEN, BATCH, EPOCHS = (256 if REAL else 64), 64, (1 if (SMOKE or RESUME) else
 LR_ENCODER, LR_HEAD, WARMUP = 3e-5, 5e-4, 0.05
 if V2:
     LR_ENCODER, LR_HEAD, WARMUP = 2e-5, 1.5e-4, 0.03
+if ROUND2:                                                 # refining an already trained model: gentler steps
+    LR_ENCODER, LR_HEAD, WARMUP = 1e-5, 8e-5, 0.02
 if RESUME:
     LR_ENCODER, LR_HEAD, WARMUP = 1.5e-5, 1e-4, 0.03
 TONE_W, STYLE_W, DIM_W = 1.0, 0.5, 0.5
@@ -295,13 +301,13 @@ if V2:
 # real messages (emojet-data kernel): what people actually typed, the emojis they used are the labels
 real_test = []
 if REAL:
-    import glob, html, gzip as _gzip
+    import glob, html, zlib, gzip as _gzip
     rdir = os.path.dirname(sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True))[0])
     n0 = len(ex)
     real_rows = [json.loads(l) for l in _gzip.open(f"{rdir}/train.jsonl.gz", "rt", encoding="utf-8")]
     real_test = [json.loads(l) for l in _gzip.open(f"{rdir}/test.jsonl.gz", "rt", encoding="utf-8")]
     for r in real_rows:
-        for _ in range(2 if r["l"] == "bn" else 1):        # Bengali is the scarcest language: seen twice
+        for _ in range(LANG_REPEAT.get(r["l"], 1)):        # Bengali (and in round 2 Hindi) are scarcer: seen more often
             ex.append(dict(text=html.unescape(r["t"]), reply=None, emo=r["e"], tones=None, style=None, dims=None, src="real-" + r["l"]))
     # long drafts: 2-6 real messages of one language in a row; the last one counts most (it's what is being sent)
     by_lang = {}
@@ -351,10 +357,11 @@ if REAL:
             silver = emoji_ids("".join(r.get("emojis", [])))
             x = dict(text=html.unescape(r["t"]), reply=None, emo=(gold or silver) or None, ew=(1.0 if gold else 0.5),
                      tones=tone_t, tone_w=tones, style=STYLE_IDX.get(r.get("style")), dims=dims, src="annot-" + r["l"])
-            if hash(r["t"]) % 50 == 0:
+            if zlib.crc32(r["t"].encode()) % 50 == 0:    # stable 2% hold-out (same messages in every run)
                 ann_test.append(x)                            # 2% held out to measure tone/style agreement
             else:
-                ex.append(x)
+                for _ in range(3 if (ROUND2 and r.get("s", "").startswith("slang")) else 1):
+                    ex.append(x)
     print(f"annotated examples: {len(ex) - n0:,} (+{len(ann_test):,} held out)")
 
 # seeds (x25 with light variations)
@@ -756,6 +763,6 @@ print(f"total notebook time {(time.time() - T_START) / 60:.0f} min")
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                                    "language_info": {"name": "python"}}, "nbformat": 4, "nbformat_minor": 5}
-out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v2_real" if REAL else "emojet_v2" if V2 else ("emojet_v1_resume" if RESUME else "emojet_v1"))) + ("_smoke" if SMOKE else "") + ".ipynb")
+out = ROOT / "training/kaggle" / (("emojet_v1_mini" if MINI else ("emojet_v2_round2" if ROUND2 else "emojet_v2_real" if REAL else "emojet_v2" if V2 else ("emojet_v1_resume" if RESUME else "emojet_v1"))) + ("_smoke" if SMOKE else "") + ".ipynb")
 out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
 print(f"wrote {out} ({len(cells)} cells, data commit {COMMIT[:10]})")
