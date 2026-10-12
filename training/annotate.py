@@ -71,6 +71,31 @@ if ROUND2:
     for path in glob.glob("/kaggle/input/**/slang/targets.jsonl.gz", recursive=True):
         slang += [json.loads(l) for l in gzip.open(path, "rt", encoding="utf-8")]
     slang = [r for r in slang if r["t"] not in before]
+    # A "slang" word that is common in ordinary messages is just a normal word (lists include "na", "bhai", "kya"):
+    # drop terms found in more than 0.2% of a 100k sample of real Bengali/Hindi messages. The owner's terms are kept.
+    KEEP = {"haga", "hagu", "haga pacche", "ekdom", "ekdum", "matha kharap", "pagol", "bokachoda", "jhakaas", "bc", "mc",
+            "chutiya", "bsdk", "bkl"}
+    terms = {r.get("term", "") for r in slang if r["s"] != "slang-english"}
+    single = {t for t in terms if t and " " not in t and t.isascii()}
+    multi = [t for t in terms if " " in t and t.isascii()]
+    script = [t for t in terms if t and not t.isascii()]
+    script_re = re.compile("|".join(sorted(map(re.escape, script), key=len, reverse=True))) if script else None
+    sample = random.sample(pool["bn"] + pool["hi"], min(100_000, len(pool["bn"]) + len(pool["hi"])))
+    df = {}
+    for r in sample:
+        low = r["t"].lower()
+        words = re.findall(r"[a-z]+", low)
+        found = set(words) & single
+        if multi:
+            joined = " " + " ".join(words) + " "
+            found |= {t for t in multi if " " + t + " " in joined}
+        if script_re:
+            found |= set(script_re.findall(low))
+        for t in found:
+            df[t] = df.get(t, 0) + 1
+    common = {t for t, n in df.items() if n / len(sample) > 0.002 and t not in KEEP}
+    log(f"slang terms: {len(terms):,}, dropped as common words: {len(common)}:", sorted(common, key=lambda t: -df[t])[:80])
+    slang = [r for r in slang if r.get("term") not in common]
     slang.sort(key=lambda r: {"bn": 0, "hi": 1, "en": 2}.get(r["l"], 3))      # Banglish/Bengali first, English slang last
     msgs = slang[: (300 if SMOKE else 32_000)]
     taken = before | {r["t"] for r in msgs}
