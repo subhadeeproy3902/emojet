@@ -157,3 +157,24 @@ python3 training/build_notebook.py $(git rev-parse --short HEAD) --round2 && pyt
     --source=subhadeep3902/emojet-slang --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2
 ```
 Smoke-test step 1 first (`--smoke`, slug `emojet-slang-smoke`, a few minutes, CPU). Do not attach `emojet-v2` to step 3 (the starting model is found by its `emojet.json`).
+
+### Round 2 result (2026-10-13)
+
+Ran for 1 epoch (50,803 steps), hit the ~10 h time budget as planned. `models/Emojet-v2round2-Q4_K_M.gguf`
+(274 MB, same size as v2-real's), registered in `emojet-ai/shared/models.json` as `emojet-v2round2`, now first
+in the list (app default). Compared with v2-real:
+
+| Metric | v2-real | v2-round2 |
+|---|---|---|
+| English real top-1 / hit@6 | 24.5% / 51.2% | 24.7% / 52.9% |
+| Hindi real top-1 / hit@6 | 24.3% / 54.6% | **26.9%** / 55.4% |
+| Bengali real top-1 / hit@6 | 25.9% / 62.1% | 25.3% / 62.3% |
+| Chat cases top-1 / top-3 | 22/40 / 26/40 | 22/40 / **30/40** |
+| Hinglish sarcasm acc | 0.826 | 0.824 |
+
+Net improvement, not a regression. **But the one case round 2 specifically targeted still fails**: "Haga
+pacche" (expected toilet/poop emojis) still returns laughing emojis, same as before round 2, despite 400
+real/mined examples of "haga" in the slang data and the document-frequency filter keeping it. Likely cause:
+one epoch isn't enough exposure to a few hundred examples inside a 50k-message training run; would need
+either more epochs on the slang data specifically, or oversampling it harder than ×3. Not re-run yet — flagged
+for the owner to decide whether it's worth another round before release.
