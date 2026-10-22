@@ -25,10 +25,14 @@ import urllib.request
 
 SMOKE = __SMOKE__
 ROUND2 = __ROUND2__        # round 2: real messages that use slang/swearing (emojet-slang) + more Bengali/Hindi, skip round-1 texts
+ROUND3 = __ROUND3__        # round 3: cleaned slang/chat-word messages (emojet-slang-3) WITH word meanings + synthetic chat lines
+CHATLEX_B64 = "__CHATLEX__"
+CHAT_LEXICON_B64 = "__CHAT_LEXICON__"
 TAXONOMY_B64 = "__TAXONOMY__"
 LLAMA_CPP_COMMIT = "__LLAMA_CPP_COMMIT__"
 MODEL_REPO, MODEL_FILE = "unsloth/Qwen3.6-35B-A3B-GGUF", "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
-TIME_BUDGET_H = 0.6 if SMOKE else (3.0 if ROUND2 else 6.0)
+TIME_BUDGET_H = 0.6 if SMOKE else (4.0 if ROUND3 else (3.0 if ROUND2 else 6.0))
+SYNTH_BUDGET_H = 0.15 if SMOKE else 1.25   # round 3: the synthetic phase runs first and stops here
 PER_LANG = {"bn": 400, "hi": 400, "en": 400} if SMOKE else {"bn": 45_000, "hi": 25_000, "en": 20_000}
 BATCH, SLOTS = 12, 16
 
@@ -59,7 +63,40 @@ for name in ("train.jsonl.gz", "plain.jsonl.gz"):
             if r["l"] in pool and 3 <= len(r["t"]) <= 500:
                 pool[r["l"]].append(r)
 msgs = []
-if ROUND2:
+_ns = {}
+if ROUND3:
+    exec(gzip.decompress(base64.b64decode(CHATLEX_B64)).decode("utf-8"), _ns)
+    LEXICON = json.loads(gzip.decompress(base64.b64decode(CHAT_LEXICON_B64)).decode("utf-8"))["entries"]
+    LX = _ns["Lexicon"](LEXICON)
+if ROUND3:
+    before = set()
+    for path in glob.glob("/kaggle/input/**/annot/annotations.jsonl", recursive=True):
+        for line in open(path, encoding="utf-8"):
+            try:
+                before.add(json.loads(line)["t"])
+            except ValueError:
+                pass
+    targets = []
+    for path in glob.glob("/kaggle/input/**/slang/targets.jsonl.gz", recursive=True):
+        rows = [json.loads(l) for l in gzip.open(path, "rt", encoding="utf-8")]
+        if rows and "notes" in rows[0]:                       # round-3 format only (round 2's targets were half junk)
+            targets += rows
+    targets = [r for r in targets if r["t"] not in before]
+    # round-robin over words, most useful first: curated Bengali/Hindi chat words, curated English, then swear lists.
+    # So if time runs out, every word has had its share instead of the first few words taking everything.
+    def prio(r):
+        return (0 if r.get("curated") else 2) + (0 if r["l"] in ("bn", "hi") else 1)
+    by_term = {}
+    for r in sorted(targets, key=prio):
+        by_term.setdefault((prio(r), r["term"]), []).append(r)
+    order = []
+    for tier in sorted({k[0] for k in by_term}):
+        lists = [v for k, v in by_term.items() if k[0] == tier]
+        for i in range(max(map(len, lists), default=0)):
+            order += [v[i] for v in lists if i < len(v)]
+    msgs = order[: (300 if SMOKE else 45_000)]
+    log(f"round 3: {len(targets):,} new target messages over {len(by_term):,} words; annotating up to {len(msgs):,}")
+elif ROUND2:
     before = set()
     for path in glob.glob("/kaggle/input/**/annot/annotations.jsonl", recursive=True):
         for line in open(path, encoding="utf-8"):
@@ -108,7 +145,8 @@ else:
     for lang, rows in pool.items():
         random.shuffle(rows)
         msgs += rows[:PER_LANG[lang]]
-random.shuffle(msgs)
+if not ROUND3:                    # round 3 keeps its word-by-word round-robin order
+    random.shuffle(msgs)
 log("to annotate:", len(msgs), {l: min(len(v), PER_LANG[l]) for l, v in pool.items()})
 
 # ---------------------------------------------------------------- engine
@@ -192,7 +230,9 @@ AXES (integers 0..9, in this order):
 
 EMOJIS: up to 4 emojis this writer would most likely put in the message, most likely first. Pick what a real person in
 this chat would send (the thing mentioned, the feeling, the joke), not generic decoration. If the writer already used
-emojis (shown in brackets) they are strong evidence.
+emojis (shown in brackets) they are strong evidence. Some messages end with (meaning: ...) explaining slang or regional
+words: use it. Include the emoji for the thing the message is about (needing the toilet -> 🚽💩, rain -> 🌧️, sleepy -> 😴)
+together with the feeling people actually add (crude jokes usually get 😂). Swear words between friends are often banter.
 
 FORMAT: exactly one line per message, nothing else:
 <number>|<tones, comma-separated>|<style or ->|<the 6 axes as 6 digits>|<emojis>
@@ -226,14 +266,14 @@ def parse(line, n):
     return k, tones[:3], style, [int(c) for c in m.group(4)], "".join(emojis)[:40]
 
 
-stat = {"batches": 0, "tokens": 0, "secs": 0.0, "cut": 0}
 
 
 def ask(batch):
     lines = []
     for k, x in enumerate(batch, 1):
         typed = "".join(EMOJIS[i] for i in x.get("e") or [])
-        lines.append(f"{k}. {x['t'][:500]}" + (f"   [{typed}]" if typed else ""))
+        notes = "; ".join(x.get("notes") or [])
+        lines.append(f"{k}. {x['t'][:500]}" + (f"   [{typed}]" if typed else "") + (f"   (meaning: {notes})" if notes else ""))
     body = {"messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": "Annotate these messages:\n" + "\n".join(lines)}],
             "temperature": 0.0, "max_tokens": 60 * len(batch) + 50}
@@ -254,6 +294,94 @@ def ask(batch):
             res.append({**batch[k], "tones": tones, "style": style, "axes": axes, "emojis": [emojis]})
     return res
 
+
+# ---------------------------------------------------------------- round 3: synthetic chat lines for the lexicon
+# Real Banglish/Hinglish chat about everyday things (sleepy, rain, toilet) is rare in public data (reviews, comments,
+# tweets). The model writes short WhatsApp-style lines that use each word; a line is kept only if the matcher finds
+# that word in it in the right language. Weighted as silver data in training; never used for evaluation.
+SCRIPTS = {"bn": [("banglish", "Banglish: Bengali typed in English letters, the way people type on WhatsApp", "roman"),
+                  ("bengali", "Bengali script", "native")],
+           "hi": [("hinglish", "Hinglish: Hindi typed in English letters, the way people type on WhatsApp", "roman"),
+                  ("hindi", "Hindi in Devanagari script", "native")],
+           "en": [("english", "casual English as young people text", "roman")]}
+SITUATIONS = ["friends' group chat", "texting a sibling or cousin", "texting a partner", "family group chat", "office or college friends",
+              "late night chat", "making plans", "complaining", "joking around", "replying to a friend's message"]
+SYNTH_SYSTEM = ("You write realistic chat messages exactly the way real people in India and Bangladesh type on WhatsApp: "
+                "casual, short, natural spelling, code-mixing where natural. No translations, no explanations, no numbering.")
+
+
+def synth(entry, variety, desc, form, rnd):
+    terms = entry[form] or []
+    if not terms:
+        return []
+    term = rnd.choice(terms)
+    sit = ", ".join(rnd.sample(SITUATIONS, 3))
+    user = (f"Write 12 different chat messages in {desc} that naturally use \"{term}\" (meaning: {entry['gloss']}). "
+            f"Mix very short ones (1-4 words) and longer ones (up to 25 words). Situations: {sit}. Vary the mood. "
+            f"One message per line, then ' || ' and 1 to 4 emojis the writer would add (the thing the message is about and "
+            f"the feeling). Format:\n<message> || <emojis>")
+    body = {"messages": [{"role": "system", "content": SYNTH_SYSTEM}, {"role": "user", "content": user}],
+            "temperature": 0.9, "top_p": 0.95, "seed": rnd.randint(0, 10**9), "max_tokens": 900}
+    req = urllib.request.Request("http://127.0.0.1:8080/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
+    out = json.loads(urllib.request.urlopen(req, timeout=900).read())["choices"][0]["message"]["content"]
+    rows = []
+    for line in out.splitlines():
+        if "||" not in line:
+            continue
+        text, emo = (x.strip() for x in line.rsplit("||", 1))
+        text = re.sub(r"^\s*(\d+[.)]|[-*•])\s*", "", text).strip().strip('"')
+        if not 2 <= len(text) <= 200 or not emo:
+            continue
+        lang = entry["lang"]
+        if not any(LEXICON[k] is entry for k, _ in LX.find(text, lang)):
+            stat["synth_rejected"] += 1
+            continue
+        rows.append({"t": text, "l": lang, "s": "synth-" + variety, "e": [], "emojis": [emo[:40]], "term": term,
+                     "gloss": entry["gloss"], "kind": entry["kind"]})
+    return rows
+
+
+stat = {"batches": 0, "tokens": 0, "secs": 0.0, "cut": 0, "synth_rejected": 0}
+if ROUND3:
+    jobs = []
+    for i, e in enumerate(LEXICON):
+        if e["kind"] == "address":
+            continue
+        for variety, desc, form in SCRIPTS[e["lang"]]:
+            for rep_ in range(1 if SMOKE else 2):
+                jobs.append((e, variety, desc, form, random.Random(i * 100 + rep_ * 7 + len(variety))))
+    if SMOKE:
+        jobs = jobs[:12]
+    random.shuffle(jobs)
+    t_s, n_syn, synth_off = time.time(), 0, False
+    sfh = open(os.path.join(OUT, "synthetic.jsonl"), "a", encoding="utf-8")
+    slock = threading.Lock()
+
+    def sjob(j):
+        global n_syn
+        if synth_off or (time.time() - T0) / 3600 > SYNTH_BUDGET_H:
+            return
+        try:
+            rows = synth(*j)
+        except Exception as exc:
+            log("synth failed:", repr(exc)[:150])
+            return
+        with slock:
+            for r in rows:
+                sfh.write(json.dumps(r, ensure_ascii=False) + "\n")
+            sfh.flush()
+            n_syn += len(rows)
+
+    with cf.ThreadPoolExecutor(SLOTS) as pool_:
+        for k, f in enumerate(cf.as_completed([pool_.submit(sjob, j) for j in jobs]), 1):
+            if k % (4 if SMOKE else 50) == 0:
+                log(f"synthetic: {k}/{len(jobs)} requests, {n_syn:,} lines kept, {stat['synth_rejected']:,} rejected (word missing)")
+            # self-check: if the model mostly fails to use the word, its lines aren't worth the GPU time; label real ones
+            if not synth_off and k >= 40 and n_syn < 0.2 * (n_syn + stat["synth_rejected"] + 1):
+                synth_off = True
+                log(f"!! synthetic lines mostly miss their word ({n_syn} kept, {stat['synth_rejected']} rejected): stopping that phase")
+    sfh.close()
+    log(f"synthetic done: {n_syn:,} lines in {(time.time() - t_s) / 60:.0f} min")
 
 # ---------------------------------------------------------------- run
 lock = threading.Lock()

@@ -740,7 +740,6 @@
    "ok_emojis": [
     "🥵",
     "☀",
-    "️",
     "🔥",
     "😓",
     "😩"
@@ -752,7 +751,6 @@
    "ok_emojis": [
     "🥺",
     "❤",
-    "️",
     "😔",
     "😢",
     "💔"
@@ -800,7 +798,6 @@
     "🥳",
     "🎁",
     "❤",
-    "️",
     "🎊"
    ]
   },
@@ -809,7 +806,6 @@
    "reply": null,
    "ok_emojis": [
     "❤",
-    "️",
     "😘",
     "🥰",
     "😍",
@@ -832,13 +828,10 @@
    "reply": null,
    "ok_emojis": [
     "🌧",
-    "️",
     "☔",
     "💧",
     "⛈",
-    "️",
-    "🌦",
-    "️"
+    "🌦"
    ]
   },
   {
@@ -985,8 +978,7 @@
     "😊",
     "👍",
     "🙌",
-    "☺",
-    "️"
+    "☺"
    ]
   },
   {
@@ -1028,7 +1020,6 @@
    "ok_emojis": [
     "💪",
     "🏋",
-    "️",
     "🏃",
     "🔥",
     "😤"
@@ -1120,6 +1111,846 @@
     "🤯",
     "😲",
     "🙄"
+   ]
+  }
+ ],
+ "slang_probes": [
+  {
+   "text": "haga pacche bhai",
+   "lang": "bn",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻",
+    "😖"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bhai ektu wait kor, hagu korte jacchi",
+   "lang": "bn",
+   "ok_emojis": [
+    "🚽",
+    "💩",
+    "🧻",
+    "🏃"
+   ],
+   "reply": null
+  },
+  {
+   "text": "uff hagu peyeche khub",
+   "lang": "bn",
+   "ok_emojis": [
+    "🚽",
+    "💩",
+    "😖",
+    "😣"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ki pad dilo re ke",
+   "lang": "bn",
+   "ok_emojis": [
+    "💨",
+    "🤢",
+    "😷",
+    "🤮"
+   ],
+   "reply": null
+  },
+  {
+   "text": "mut pacche, gari thama",
+   "lang": "bn",
+   "ok_emojis": [
+    "🚽",
+    "💦",
+    "😬",
+    "😣"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ghumabo ekhon, kal kotha hobe",
+   "lang": "bn",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🛌",
+    "🌙"
+   ],
+   "reply": null
+  },
+  {
+   "text": "khub ghum pacche aaj",
+   "lang": "bn",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱",
+    "😪"
+   ],
+   "reply": null
+  },
+  {
+   "text": "khide peye geche, ki khabo bol",
+   "lang": "bn",
+   "ok_emojis": [
+    "😋",
+    "🤤",
+    "🍽️",
+    "🍔",
+    "🍛",
+    "🍕"
+   ],
+   "reply": null
+  },
+  {
+   "text": "aaj biriyani khabo",
+   "lang": "bn",
+   "ok_emojis": [
+    "🍛",
+    "😋",
+    "🤤"
+   ],
+   "reply": null
+  },
+  {
+   "text": "cha khabi?",
+   "lang": "bn",
+   "ok_emojis": [
+    "☕",
+    "🫖"
+   ],
+   "reply": null
+  },
+  {
+   "text": "baire khub brishti hocche",
+   "lang": "bn",
+   "ok_emojis": [
+    "🌧️",
+    "☔",
+    "⛈️",
+    "🌦️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ki thanda porche aaj",
+   "lang": "bn",
+   "ok_emojis": [
+    "🥶",
+    "❄️",
+    "🧣"
+   ],
+   "reply": null
+  },
+  {
+   "text": "kal porikkha, kichu porini",
+   "lang": "bn",
+   "ok_emojis": [
+    "📚",
+    "😭",
+    "😩",
+    "😰",
+    "✍️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "tomake khub bhalobashi",
+   "lang": "bn",
+   "ok_emojis": [
+    "❤️",
+    "🥰",
+    "😘",
+    "😍",
+    "💕"
+   ],
+   "reply": null
+  },
+  {
+   "text": "mon kharap lagche",
+   "lang": "bn",
+   "ok_emojis": [
+    "😔",
+    "🥺",
+    "😢",
+    "💔",
+    "😞"
+   ],
+   "reply": null
+  },
+  {
+   "text": "jor esheche, sorir kharap",
+   "lang": "bn",
+   "ok_emojis": [
+    "🤒",
+    "🤧",
+    "😷"
+   ],
+   "reply": null
+  },
+  {
+   "text": "shubho ratri sobai",
+   "lang": "bn",
+   "ok_emojis": [
+    "🌙",
+    "😴",
+    "💤"
+   ],
+   "reply": null
+  },
+  {
+   "text": "subho sokal",
+   "lang": "bn",
+   "ok_emojis": [
+    "🌅",
+    "☀️",
+    "😊",
+    "🌞"
+   ],
+   "reply": null
+  },
+  {
+   "text": "aaj pujo te ghurte jabo",
+   "lang": "bn",
+   "ok_emojis": [
+    "🙏",
+    "🪔",
+    "🎉",
+    "🎒",
+    "🥳"
+   ],
+   "reply": null
+  },
+  {
+   "text": "fuchka khete jabi?",
+   "lang": "bn",
+   "ok_emojis": [
+    "😋",
+    "🤤",
+    "🥟"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ekdom thik bolechis",
+   "lang": "bn",
+   "ok_emojis": [
+    "💯",
+    "👌",
+    "🤝",
+    "👍"
+   ],
+   "reply": null
+  },
+  {
+   "text": "fatafati hoyeche",
+   "lang": "bn",
+   "ok_emojis": [
+    "🔥",
+    "😍",
+    "🤩",
+    "👏"
+   ],
+   "reply": null
+  },
+  {
+   "text": "faltu movie chilo",
+   "lang": "bn",
+   "ok_emojis": [
+    "🙄",
+    "👎",
+    "😒",
+    "😑"
+   ],
+   "reply": null
+  },
+  {
+   "text": "pagla naki",
+   "lang": "bn",
+   "ok_emojis": [
+    "🤪",
+    "😂",
+    "🙄",
+    "🤣"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bokachoda kothakar",
+   "lang": "bn",
+   "ok_emojis": [
+    "😂",
+    "🤦",
+    "😡",
+    "🤬",
+    "🙄"
+   ],
+   "reply": null
+  },
+  {
+   "text": "taka nei pocket e",
+   "lang": "bn",
+   "ok_emojis": [
+    "💸",
+    "😩",
+    "💰",
+    "😭"
+   ],
+   "reply": null
+  },
+  {
+   "text": "jame atke achi",
+   "lang": "bn",
+   "ok_emojis": [
+    "🚗",
+    "🚦",
+    "😩",
+    "😤"
+   ],
+   "reply": null
+  },
+  {
+   "text": "current chole geche abar",
+   "lang": "bn",
+   "ok_emojis": [
+    "🔌",
+    "💡",
+    "😩",
+    "😤"
+   ],
+   "reply": null
+  },
+  {
+   "text": "kal bondhur biye",
+   "lang": "bn",
+   "ok_emojis": [
+    "💍",
+    "🎉",
+    "👰",
+    "🥳"
+   ],
+   "reply": null
+  },
+  {
+   "text": "moja pailam khub",
+   "lang": "bn",
+   "ok_emojis": [
+    "😂",
+    "🤣",
+    "😄",
+    "😆"
+   ],
+   "reply": null
+  },
+  {
+   "text": "হাগা পেয়েছে",
+   "lang": "bn",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ঘুম পাচ্ছে খুব",
+   "lang": "bn",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱"
+   ],
+   "reply": null
+  },
+  {
+   "text": "বৃষ্টি পড়ছে বাইরে",
+   "lang": "bn",
+   "ok_emojis": [
+    "🌧️",
+    "☔",
+    "⛈️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "খিদে পেয়েছে",
+   "lang": "bn",
+   "ok_emojis": [
+    "😋",
+    "🤤",
+    "🍽️",
+    "🍛"
+   ],
+   "reply": null
+  },
+  {
+   "text": "শুভ জন্মদিন বন্ধু",
+   "lang": "bn",
+   "ok_emojis": [
+    "🎂",
+    "🎉",
+    "🥳",
+    "🎁"
+   ],
+   "reply": null
+  },
+  {
+   "text": "জ্বর এসেছে",
+   "lang": "bn",
+   "ok_emojis": [
+    "🤒",
+    "🤧",
+    "😷"
+   ],
+   "reply": null
+  },
+  {
+   "text": "চা খাবে?",
+   "lang": "bn",
+   "ok_emojis": [
+    "☕",
+    "🫖"
+   ],
+   "reply": null
+  },
+  {
+   "text": "hagaa pachhe",
+   "lang": "bn",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ],
+   "reply": null
+  },
+  {
+   "text": "ghum pachhe",
+   "lang": "bn",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱"
+   ],
+   "reply": null
+  },
+  {
+   "text": "khida lagse",
+   "lang": "bn",
+   "ok_emojis": [
+    "😋",
+    "🤤",
+    "🍽️",
+    "🍛"
+   ],
+   "reply": null
+  },
+  {
+   "text": "brishty hochche",
+   "lang": "bn",
+   "ok_emojis": [
+    "🌧️",
+    "☔",
+    "⛈️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "tatti aa rahi hai yaar",
+   "lang": "hi",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bhai susu aa rahi, gaadi roko",
+   "lang": "hi",
+   "ok_emojis": [
+    "🚽",
+    "💦",
+    "😬"
+   ],
+   "reply": null
+  },
+  {
+   "text": "kisne paad mara",
+   "lang": "hi",
+   "ok_emojis": [
+    "💨",
+    "🤢",
+    "😷",
+    "🤮"
+   ],
+   "reply": null
+  },
+  {
+   "text": "neend aa rahi hai bahut",
+   "lang": "hi",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱"
+   ],
+   "reply": null
+  },
+  {
+   "text": "chai peene chalein?",
+   "lang": "hi",
+   "ok_emojis": [
+    "☕",
+    "🫖"
+   ],
+   "reply": null
+  },
+  {
+   "text": "baarish ho rahi hai bahar",
+   "lang": "hi",
+   "ok_emojis": [
+    "🌧️",
+    "☔",
+    "⛈️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bahut garmi hai aaj",
+   "lang": "hi",
+   "ok_emojis": [
+    "🥵",
+    "☀️",
+    "🔥"
+   ],
+   "reply": null
+  },
+  {
+   "text": "kal paper hai kuch nahi padha",
+   "lang": "hi",
+   "ok_emojis": [
+    "📚",
+    "😭",
+    "😩",
+    "😰"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bukhar hai, tabiyat kharab",
+   "lang": "hi",
+   "ok_emojis": [
+    "🤒",
+    "🤧",
+    "😷"
+   ],
+   "reply": null
+  },
+  {
+   "text": "shaadi mein chalna hai",
+   "lang": "hi",
+   "ok_emojis": [
+    "💍",
+    "🎉",
+    "👰",
+    "🥳"
+   ],
+   "reply": null
+  },
+  {
+   "text": "mast party thi",
+   "lang": "hi",
+   "ok_emojis": [
+    "🔥",
+    "🎉",
+    "🥳",
+    "😍"
+   ],
+   "reply": null
+  },
+  {
+   "text": "bakwas movie thi yaar",
+   "lang": "hi",
+   "ok_emojis": [
+    "🙄",
+    "👎",
+    "😒",
+    "😑"
+   ],
+   "reply": null
+  },
+  {
+   "text": "kya jugaad lagaya hai",
+   "lang": "hi",
+   "ok_emojis": [
+    "😎",
+    "💡",
+    "😂",
+    "👏",
+    "🔥"
+   ],
+   "reply": null
+  },
+  {
+   "text": "chutiya hai kya",
+   "lang": "hi",
+   "ok_emojis": [
+    "😂",
+    "🤦",
+    "🙄",
+    "😡",
+    "🤬"
+   ],
+   "reply": null
+  },
+  {
+   "text": "daaru party aaj raat",
+   "lang": "hi",
+   "ok_emojis": [
+    "🍻",
+    "🥃",
+    "🎉",
+    "🍾"
+   ],
+   "reply": null
+  },
+  {
+   "text": "मुझे नींद आ रही है",
+   "lang": "hi",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱"
+   ],
+   "reply": null
+  },
+  {
+   "text": "बारिश हो रही है",
+   "lang": "hi",
+   "ok_emojis": [
+    "🌧️",
+    "☔",
+    "⛈️"
+   ],
+   "reply": null
+  },
+  {
+   "text": "जन्मदिन मुबारक हो",
+   "lang": "hi",
+   "ok_emojis": [
+    "🎂",
+    "🎉",
+    "🥳"
+   ],
+   "reply": null
+  },
+  {
+   "text": "चाय पियोगे?",
+   "lang": "hi",
+   "ok_emojis": [
+    "☕",
+    "🫖"
+   ],
+   "reply": null
+  },
+  {
+   "text": "that party was lit",
+   "lang": "en",
+   "ok_emojis": [
+    "🔥",
+    "🎉",
+    "🤩",
+    "🥳"
+   ],
+   "reply": null
+  },
+  {
+   "text": "no cap this is the best pizza",
+   "lang": "en",
+   "ok_emojis": [
+    "💯",
+    "🍕",
+    "😋",
+    "🔥"
+   ],
+   "reply": null
+  },
+  {
+   "text": "he's kinda sus ngl",
+   "lang": "en",
+   "ok_emojis": [
+    "🤨",
+    "👀",
+    "🤔"
+   ],
+   "reply": null
+  },
+  {
+   "text": "she ate and left no crumbs",
+   "lang": "en",
+   "ok_emojis": [
+    "💅",
+    "🔥",
+    "👑",
+    "😍"
+   ],
+   "reply": null
+  },
+  {
+   "text": "im deadddd",
+   "lang": "en",
+   "ok_emojis": [
+    "💀",
+    "😂",
+    "🤣"
+   ],
+   "reply": null
+  },
+  {
+   "text": "gotta poop brb",
+   "lang": "en",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ],
+   "reply": null
+  },
+  {
+   "text": "this song is a vibe",
+   "lang": "en",
+   "ok_emojis": [
+    "🎶",
+    "✨",
+    "😌",
+    "🔥",
+    "🎵"
+   ],
+   "reply": null
+  },
+  {
+   "text": "he's the goat",
+   "lang": "en",
+   "ok_emojis": [
+    "🐐",
+    "🔥",
+    "🏆"
+   ],
+   "reply": null
+  },
+  {
+   "text": "so hungover rn",
+   "lang": "en",
+   "ok_emojis": [
+    "🥴",
+    "🤢",
+    "😵"
+   ],
+   "reply": null
+  },
+  {
+   "text": "haga pacche",
+   "lang": "bn",
+   "ok_emojis": [
+    "💩",
+    "🚽",
+    "🧻",
+    "😖"
+   ],
+   "reply": "ki korchis?"
+  },
+  {
+   "text": "same",
+   "lang": "bn",
+   "ok_emojis": [
+    "😴",
+    "💤",
+    "🥱"
+   ],
+   "reply": "ghum pacche khub"
+  },
+  {
+   "text": "ekdom",
+   "lang": "bn",
+   "ok_emojis": [
+    "💯",
+    "👌",
+    "😂",
+    "🤝"
+   ],
+   "reply": "kal theke diet shuru"
+  }
+ ],
+ "slang_negatives": [
+  {
+   "text": "Bhagavad Gita path korchi",
+   "lang": "bn",
+   "bad_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ]
+  },
+  {
+   "text": "BJP bhagao desh bachao",
+   "lang": "hi",
+   "bad_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ]
+  },
+  {
+   "text": "Ami bhagabo na",
+   "lang": "bn",
+   "bad_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ]
+  },
+  {
+   "text": "give me a big hug",
+   "lang": "en",
+   "bad_emojis": [
+    "💩",
+    "🚽",
+    "🧻"
+   ]
+  },
+  {
+   "text": "5 ta baje dekha korbo",
+   "lang": "bn",
+   "bad_emojis": [
+    "👎",
+    "🙄",
+    "😒"
+   ]
+  },
+  {
+   "text": "chhod do yaar",
+   "lang": "hi",
+   "bad_emojis": [
+    "🤬",
+    "😡"
+   ]
+  },
+  {
+   "text": "Puja ke bolechi kal ashte",
+   "lang": "bn",
+   "bad_emojis": [
+    "🪔",
+    "🙏"
+   ]
+  },
+  {
+   "text": "mera kutta bahut cute hai",
+   "lang": "hi",
+   "bad_emojis": [
+    "🤬",
+    "😡"
    ]
   }
  ]

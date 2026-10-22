@@ -72,8 +72,13 @@ def status(slug):
 
 
 def download(url, path, tries=8):
-    """Stream to disk; resume with HTTP Range after a dropped connection."""
+    """Stream to disk; resume with HTTP Range after a dropped connection.
+
+    The storage server sometimes ends the stream early WITHOUT an error (read() just returns b"");
+    that once left a 798 MB model as 140 MB. So the size is checked against the server's total
+    (Content-Range / Content-Length) and a short file is resumed like a dropped connection."""
     part = path.with_name(path.name + ".part")
+    total = None
     for attempt in range(tries):
         have = part.stat().st_size if part.exists() else 0
         headers = {"Authorization": f"Bearer {TOKEN}", "User-Agent": "emojet"}
@@ -83,9 +88,16 @@ def download(url, path, tries=8):
             with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
                 if have and r.status != 206:
                     have = 0                                   # server ignored Range: start over
+                rng = r.headers.get("Content-Range") or ""     # "bytes 100-999/1000"
+                if rng.rpartition("/")[2].isdigit():
+                    total = int(rng.rpartition("/")[2])
+                elif (r.headers.get("Content-Length") or "").isdigit():
+                    total = have + int(r.headers["Content-Length"])
                 with open(part, "ab" if have else "wb") as f:
                     while chunk := r.read(1 << 20):
                         f.write(chunk)
+            if total is not None and part.stat().st_size < total:
+                raise http.client.IncompleteRead(b"", total - part.stat().st_size)
             part.rename(path)
             return
         except (OSError, http.client.HTTPException) as e:

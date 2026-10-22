@@ -15,7 +15,12 @@ SMOKE = "--smoke" in sys.argv
 tax = json.loads((ROOT / "labels/tones.json").read_text(encoding="utf-8"))
 tax["emojis"] = [e["e"] for e in json.loads((ROOT / "labels/emoji-catalog.json").read_text(encoding="utf-8"))["emojis"]]
 b64 = base64.b64encode(gzip.compress(json.dumps(tax, ensure_ascii=False).encode())).decode()
+def pack(path):
+    return base64.b64encode(gzip.compress((ROOT / path).read_bytes())).decode()
+
+
 src = (ROOT / "training/slang_data.py").read_text(encoding="utf-8").replace("__SMOKE__", str(SMOKE)).replace("__TAXONOMY__", b64)
+src = src.replace("__CHATLEX__", pack("training/chatlex.py")).replace("__CHAT_LEXICON__", pack("training/data/chat_lexicon.json"))
 out = ROOT / "training/kaggle" / ("emojet_slang_smoke.py" if SMOKE else "emojet_slang.py")
 out.write_text(src, encoding="utf-8")
 print(f"wrote {out} (smoke={SMOKE})")

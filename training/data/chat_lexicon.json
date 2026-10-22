@@ -1,0 +1,2833 @@
+{
+ "note": "Everyday chat words + slang + swears for Bengali/Banglish, Hindi/Hinglish and English internet slang. Used to (1) find real messages that use them (slang_data.py), (2) tell the labeller what they mean (annotate.py), (3) add meaning emojis to real messages that contain them (training). kind: topic = the word names a thing/state, its emojis always apply; reaction = a whole-message reaction ('ekdom', 'darun'), its emojis apply only to short messages; swear/address = meaning only, the emoji comes from context. roman = Latin-letter spellings (matching also folds ch/chh, sh/s, bh/v, oo/u, ee/i, z/j, doubled letters); native = Bengali or Devanagari script. inflect=false: whole word only (no suffixes). Swear entries are matched exactly (no spelling folding): folding would turn Hindi 'chhod' (leave it) into a swear. fold=false: only lowercase + collapsed letters (for short words whose folded form is another word).",
+ "entries": [
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "haga",
+    "hagu",
+    "hagbo",
+    "hagte",
+    "hagchi",
+    "hagche",
+    "hagis",
+    "hagish",
+    "hege",
+    "hegechi",
+    "hegeche",
+    "haga pacche",
+    "hagu pacche",
+    "haga peyeche",
+    "hagu korbo",
+    "hagte jabo"
+   ],
+   "native": [
+    "হাগা",
+    "হাগু",
+    "হাগব",
+    "হাগতে",
+    "হাগছি",
+    "হাগছে",
+    "হেগে",
+    "হাগা পাচ্ছে",
+    "হাগু পাচ্ছে",
+    "হাগা পেয়েছে"
+   ],
+   "gloss": "poop / need to poop (crude, casual)",
+   "emojis": "💩🚽🧻",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "paikhana",
+    "paykhana",
+    "pykhana",
+    "potty",
+    "potti",
+    "latrine",
+    "bathroom jabo",
+    "toilet jabo"
+   ],
+   "native": [
+    "পায়খানা",
+    "পায়খানা",
+    "পটি",
+    "ল্যাট্রিন"
+   ],
+   "gloss": "toilet / poop",
+   "emojis": "🚽💩🧻"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "mut",
+    "mutbo",
+    "mutchi",
+    "mut pacche",
+    "hishu",
+    "hisu",
+    "susu",
+    "hishu pacche",
+    "hisi"
+   ],
+   "native": [
+    "মুত",
+    "মুতব",
+    "মুততে",
+    "মুত পাচ্ছে",
+    "হিসু",
+    "হিসি"
+   ],
+   "gloss": "pee / need to pee (crude or childish)",
+   "emojis": "🚽💦😬",
+   "inflect": false,
+   "fold": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "padchi",
+    "pade",
+    "padish",
+    "pad marchi",
+    "pad dilo",
+    "pad marlo"
+   ],
+   "native": [
+    "পাদ",
+    "পাদছি",
+    "পাদে",
+    "পাদ দিল"
+   ],
+   "gloss": "fart",
+   "emojis": "💨🤢😷",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "ghum",
+    "ghumabo",
+    "ghumachi",
+    "ghumacchi",
+    "ghumate",
+    "ghumiye",
+    "ghumao",
+    "ghumo",
+    "ghumaw",
+    "ghum pacche",
+    "ghum asche",
+    "ghum ashche",
+    "ghumay"
+   ],
+   "native": [
+    "ঘুম",
+    "ঘুমাব",
+    "ঘুমাচ্ছি",
+    "ঘুমাতে",
+    "ঘুমিয়ে",
+    "ঘুম পাচ্ছে",
+    "ঘুম আসছে",
+    "ঘুমাও"
+   ],
+   "gloss": "sleep / sleepy / going to sleep",
+   "emojis": "😴💤🛌"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "khide",
+    "khida",
+    "khidhe",
+    "khide peyeche",
+    "khide pacche",
+    "khub khide",
+    "khida lagse",
+    "khida lagche"
+   ],
+   "native": [
+    "খিদে",
+    "খিদা",
+    "ক্ষুধা",
+    "খিদে পেয়েছে",
+    "খিদে পাচ্ছে"
+   ],
+   "gloss": "hungry",
+   "emojis": "😋🤤🍽️"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "khabo",
+    "khacchi",
+    "khachi",
+    "khete",
+    "kheyechi",
+    "kheyecho",
+    "kheyechis",
+    "khaisos",
+    "khaiso",
+    "khawa",
+    "khaoa",
+    "khabar",
+    "khete jacchi",
+    "khete jabo",
+    "khaba"
+   ],
+   "native": [
+    "খাব",
+    "খাচ্ছি",
+    "খেতে",
+    "খেয়েছি",
+    "খেয়েছো",
+    "খেয়েছিস",
+    "খাওয়া",
+    "খাবার"
+   ],
+   "gloss": "eat / food / having a meal",
+   "emojis": "🍽️😋🍛"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "chaa",
+    "cha khabo",
+    "cha khete",
+    "chaa khabi",
+    "cha khaba"
+   ],
+   "native": [
+    "চা"
+   ],
+   "gloss": "tea",
+   "emojis": "☕🫖",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "bhaat",
+    "bhat",
+    "vaat",
+    "vat",
+    "dal bhat"
+   ],
+   "native": [
+    "ভাত",
+    "ডাল ভাত"
+   ],
+   "gloss": "rice (the meal)",
+   "emojis": "🍚🍛",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "mach",
+    "maach",
+    "macher jhol",
+    "ilish",
+    "hilsa",
+    "rui"
+   ],
+   "native": [
+    "মাছ",
+    "মাছের ঝোল",
+    "ইলিশ"
+   ],
+   "gloss": "fish (dish)",
+   "emojis": "🐟🍛"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "mangsho",
+    "mangso",
+    "mangsa",
+    "khashir mangsho",
+    "murgi",
+    "chicken kosha"
+   ],
+   "native": [
+    "মাংস",
+    "খাসির মাংস",
+    "মুরগি"
+   ],
+   "gloss": "meat / mutton / chicken (dish)",
+   "emojis": "🍗🍖🍛"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "biriyani",
+    "biryani",
+    "birani",
+    "kacchi"
+   ],
+   "native": [
+    "বিরিয়ানি",
+    "কাচ্চি"
+   ],
+   "gloss": "biryani",
+   "emojis": "🍛😋🤤"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "fuchka",
+    "phuchka",
+    "puchka",
+    "fuska",
+    "chotpoti",
+    "jhalmuri"
+   ],
+   "native": [
+    "ফুচকা",
+    "চটপটি",
+    "ঝালমুড়ি"
+   ],
+   "gloss": "street snack (pani puri / chaat)",
+   "emojis": "😋🤤🥟"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "mishti",
+    "misti",
+    "rosogolla",
+    "roshogolla",
+    "rasgulla",
+    "sondesh",
+    "mishti doi"
+   ],
+   "native": [
+    "মিষ্টি",
+    "রসগোল্লা",
+    "সন্দেশ",
+    "মিষ্টি দই"
+   ],
+   "gloss": "sweets / Bengali sweets",
+   "emojis": "😋🍬🍮"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "luchi",
+    "porota",
+    "paratha",
+    "ruti",
+    "roti"
+   ],
+   "native": [
+    "লুচি",
+    "পরোটা",
+    "রুটি"
+   ],
+   "gloss": "flatbread (luchi/paratha/roti)",
+   "emojis": "🫓😋"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "jhal",
+    "jhaal",
+    "jhal lagche",
+    "jhal lagse",
+    "khub jhal"
+   ],
+   "native": [
+    "ঝাল",
+    "ঝাল লাগছে"
+   ],
+   "gloss": "spicy (hot food)",
+   "emojis": "🌶️🥵🔥",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "brishti",
+    "bristi",
+    "brishty",
+    "brishti porche",
+    "brishti hocche",
+    "brishti hoche",
+    "bristi hocche"
+   ],
+   "native": [
+    "বৃষ্টি",
+    "বৃষ্টি পড়ছে",
+    "বৃষ্টি হচ্ছে"
+   ],
+   "gloss": "rain / it's raining",
+   "emojis": "🌧️☔🌦️"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "gorom",
+    "gorom lagche",
+    "gorom lagse",
+    "ki gorom",
+    "khub gorom",
+    "gorome"
+   ],
+   "native": [
+    "গরম",
+    "গরম লাগছে",
+    "কি গরম"
+   ],
+   "gloss": "hot weather / feeling hot",
+   "emojis": "🥵☀️🔥"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "thanda",
+    "thanda lagche",
+    "thanda lagse",
+    "sheet porche",
+    "khub thanda",
+    "kuasha",
+    "kuyasha"
+   ],
+   "native": [
+    "ঠান্ডা",
+    "ঠাণ্ডা",
+    "শীত",
+    "শীত পড়েছে",
+    "কুয়াশা"
+   ],
+   "gloss": "cold / winter / fog",
+   "emojis": "🥶❄️🧣"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "exam ache",
+    "porte boshbo",
+    "porashona",
+    "porasona",
+    "tuition",
+    "tution",
+    "kal porikkha",
+    "porikkha ache",
+    "porikkha dite",
+    "porikkha shesh",
+    "porikkhar jonno",
+    "porikkha kharap",
+    "porikkha bhalo",
+    "porikkha valo"
+   ],
+   "native": [
+    "পড়াশোনা",
+    "পড়তে বসব",
+    "টিউশন",
+    "কাল পরীক্ষা",
+    "পরীক্ষা আছে",
+    "পরীক্ষা দিতে",
+    "পরীক্ষা শেষ",
+    "পরীক্ষার জন্য",
+    "পরীক্ষা খারাপ",
+    "পরীক্ষা ভালো"
+   ],
+   "gloss": "exam / studying",
+   "emojis": "📚✍️😩"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "kaj korchi",
+    "office jacchi",
+    "office e",
+    "kaj ache"
+   ],
+   "native": [
+    "অফিস"
+   ],
+   "gloss": "work / at the office",
+   "emojis": "💼💻😮‍💨",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "bhalobashi",
+    "valobashi",
+    "bhalobasi",
+    "valobasi",
+    "bhalobasha",
+    "valobasa",
+    "bhalobeshe",
+    "tomake bhalobashi",
+    "tore valobasi"
+   ],
+   "native": [
+    "ভালোবাসি",
+    "ভালবাসি",
+    "ভালোবাসা",
+    "ভালবাসা",
+    "তোমাকে ভালোবাসি"
+   ],
+   "gloss": "I love you / love",
+   "emojis": "❤️🥰😘"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "prem",
+    "premer",
+    "prem korchi",
+    "crush",
+    "gf",
+    "bf"
+   ],
+   "native": [
+    "প্রেম",
+    "প্রেমের"
+   ],
+   "gloss": "romance / love affair",
+   "emojis": "💕😍🥰",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "miss korchi",
+    "miss kori",
+    "miss korchis",
+    "mon kharap",
+    "mon kharap lagche",
+    "mon kharap lagse",
+    "mon bhalo nei",
+    "mon valo nai"
+   ],
+   "native": [
+    "মিস করছি",
+    "মন খারাপ",
+    "মন ভালো নেই"
+   ],
+   "gloss": "missing someone / feeling sad",
+   "emojis": "🥺😔💔"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "kanna",
+    "kanna pacche",
+    "kadchi",
+    "kandchi",
+    "kadis na",
+    "kedechi"
+   ],
+   "native": [
+    "কান্না",
+    "কান্না পাচ্ছে",
+    "কাঁদছি",
+    "কেঁদেছি"
+   ],
+   "gloss": "crying / want to cry",
+   "emojis": "😭😢🥺"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "rag",
+    "raag",
+    "rege gechi",
+    "rag hocche",
+    "rag uthche",
+    "matha gorom"
+   ],
+   "native": [
+    "রাগ",
+    "রেগে গেছি",
+    "মাথা গরম"
+   ],
+   "gloss": "angry",
+   "emojis": "😡😤",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "bhoy",
+    "voy",
+    "bhoy pacchi",
+    "bhoy lagche",
+    "voy lagse",
+    "bhoy korche"
+   ],
+   "native": [
+    "ভয়",
+    "ভয় পাচ্ছি",
+    "ভয় লাগছে"
+   ],
+   "gloss": "scared",
+   "emojis": "😨😱",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "lojja",
+    "lajja",
+    "lojja lagche",
+    "sharam"
+   ],
+   "native": [
+    "লজ্জা",
+    "লজ্জা লাগছে"
+   ],
+   "gloss": "shy / embarrassed",
+   "emojis": "🙈😳☺️"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "moja",
+    "moza",
+    "moja lagche",
+    "moja lagse",
+    "moja pailam",
+    "hasi pacche",
+    "haste haste",
+    "hasi ashche",
+    "hashi"
+   ],
+   "native": [
+    "মজা",
+    "মজা লাগছে",
+    "হাসি পাচ্ছে",
+    "হাসতে হাসতে"
+   ],
+   "gloss": "fun / laughing",
+   "emojis": "😂🤣",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "jor",
+    "jwor",
+    "jor esheche",
+    "jor asche",
+    "osukh",
+    "sorir kharap",
+    "shorir kharap",
+    "sordi",
+    "kashi"
+   ],
+   "native": [
+    "জ্বর",
+    "জ্বর এসেছে",
+    "অসুখ",
+    "শরীর খারাপ",
+    "সর্দি",
+    "কাশি"
+   ],
+   "gloss": "fever / unwell / cold and cough",
+   "emojis": "🤒🤧😷"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "matha betha",
+    "matha byatha",
+    "matha dhorche",
+    "matha dhoreche"
+   ],
+   "native": [
+    "মাথা ব্যথা",
+    "মাথা ধরেছে"
+   ],
+   "gloss": "headache",
+   "emojis": "🤕😣"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "shubho jonmodin",
+    "subho jonmodin",
+    "shuvo jonmodin",
+    "suvo jonmodin",
+    "jonmodin",
+    "janmadin"
+   ],
+   "native": [
+    "শুভ জন্মদিন",
+    "জন্মদিন",
+    "জন্মদিনের"
+   ],
+   "gloss": "happy birthday / birthday",
+   "emojis": "🎂🎉🥳"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "shubho ratri",
+    "subho ratri",
+    "shuvo ratri",
+    "bhalo ghumao",
+    "gn"
+   ],
+   "native": [
+    "শুভ রাত্রি",
+    "শুভরাত্রি"
+   ],
+   "gloss": "good night",
+   "emojis": "🌙😴💤"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "shubho sokal",
+    "subho sokal",
+    "shuvo sokal",
+    "suprobhat"
+   ],
+   "native": [
+    "শুভ সকাল",
+    "সুপ্রভাত"
+   ],
+   "gloss": "good morning",
+   "emojis": "🌅☀️😊"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "biye",
+    "biya",
+    "biyer",
+    "biye korchi",
+    "biyete"
+   ],
+   "native": [
+    "বিয়ে",
+    "বিয়ের",
+    "বিয়েতে"
+   ],
+   "gloss": "wedding / getting married",
+   "emojis": "💍👰🎉"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "pujo",
+    "durga pujo",
+    "durga puja",
+    "pandal",
+    "thakur dekhte"
+   ],
+   "native": [
+    "পুজো",
+    "দুর্গা পুজো",
+    "প্যান্ডেল"
+   ],
+   "gloss": "Durga Puja festival / pandal hopping",
+   "emojis": "🙏🪔🎉"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "eid",
+    "eid mubarak",
+    "eid er"
+   ],
+   "native": [
+    "ঈদ",
+    "ঈদ মোবারক"
+   ],
+   "gloss": "Eid / Eid greetings",
+   "emojis": "🌙🕌🎉"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "taka",
+    "takar",
+    "taka nei",
+    "taka nai",
+    "poisa"
+   ],
+   "native": [
+    "টাকা",
+    "টাকার",
+    "পয়সা"
+   ],
+   "gloss": "money / no money",
+   "emojis": "💰💸",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "jhogra",
+    "jhagra",
+    "jhogra korchi",
+    "maramari",
+    "marpit",
+    "mar khabi"
+   ],
+   "native": [
+    "ঝগড়া",
+    "মারামারি",
+    "মার খাবি"
+   ],
+   "gloss": "fight / quarrel",
+   "emojis": "😤👊😡"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "ghurte jabo",
+    "ghurte",
+    "ghurbo",
+    "berate jabo",
+    "berate",
+    "berabo",
+    "tour e",
+    "trip e"
+   ],
+   "native": [
+    "ঘুরতে যাব",
+    "ঘুরতে",
+    "বেড়াতে"
+   ],
+   "gloss": "going out / trip / travelling",
+   "emojis": "🎒🌍🚗"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "jam",
+    "jaam",
+    "jame",
+    "jam e",
+    "traffic jam"
+   ],
+   "native": [
+    "জ্যাম",
+    "জ্যামে"
+   ],
+   "gloss": "traffic jam",
+   "emojis": "🚗🚦😩",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "current chole geche",
+    "karent nei",
+    "current nai",
+    "load shedding",
+    "loadshedding",
+    "bidyut nei"
+   ],
+   "native": [
+    "কারেন্ট নেই",
+    "লোডশেডিং",
+    "বিদ্যুৎ নেই"
+   ],
+   "gloss": "power cut",
+   "emojis": "🔌💡😩"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "khela",
+    "khelbo",
+    "khelchi",
+    "khela dekhchi",
+    "match dekhchi"
+   ],
+   "native": [
+    "খেলা",
+    "খেলব",
+    "খেলছি"
+   ],
+   "gloss": "playing / watching the match",
+   "emojis": "🏏⚽🔥"
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "bari",
+    "barite",
+    "bari jacchi",
+    "bari firchi",
+    "basay",
+    "bashay"
+   ],
+   "native": [
+    "বাড়ি",
+    "বাড়িতে",
+    "বাসায়"
+   ],
+   "gloss": "home / going home",
+   "emojis": "🏠",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "topic",
+   "roman": [
+    "jol",
+    "pani",
+    "jol khabo",
+    "pani khabo"
+   ],
+   "native": [
+    "জল",
+    "পানি"
+   ],
+   "gloss": "water / drinking water",
+   "emojis": "💧🥤",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "ekdom",
+    "ekdum",
+    "ekdom thik",
+    "ekdom tai",
+    "ekdom ekdom"
+   ],
+   "native": [
+    "একদম",
+    "একদম ঠিক"
+   ],
+   "gloss": "totally / exactly right (strong agreement)",
+   "emojis": "💯👌🤝",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "darun",
+    "daroon",
+    "fatafati",
+    "phatafati",
+    "jhakkas",
+    "joss",
+    "jos",
+    "josh",
+    "osthir",
+    "oshthir",
+    "hebbi",
+    "hebby",
+    "oshadharon",
+    "osadharon",
+    "khub bhalo",
+    "khub valo"
+   ],
+   "native": [
+    "দারুণ",
+    "ফাটাফাটি",
+    "জোস",
+    "অস্থির",
+    "অসাধারণ",
+    "খুব ভালো"
+   ],
+   "gloss": "awesome / amazing / superb",
+   "emojis": "🔥😍🤩",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "sundor",
+    "shundor",
+    "ki sundor",
+    "kyute",
+    "cute lagche"
+   ],
+   "native": [
+    "সুন্দর",
+    "কি সুন্দর"
+   ],
+   "gloss": "beautiful / cute",
+   "emojis": "😍✨❤️",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "faltu",
+    "bekar",
+    "jata",
+    "fokir",
+    "bal er"
+   ],
+   "native": [
+    "ফালতু",
+    "বেকার",
+    "জাতা"
+   ],
+   "gloss": "useless / rubbish / bad",
+   "emojis": "🙄👎😒",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "pagol",
+    "pagla",
+    "pagli",
+    "pagol naki",
+    "pagol hoye gechi",
+    "pagla naki",
+    "matha kharap",
+    "mathakharap",
+    "matha thik ache",
+    "matha thik hoe geche",
+    "matha gese"
+   ],
+   "native": [
+    "পাগল",
+    "পাগলা",
+    "পাগলি",
+    "মাথা খারাপ"
+   ],
+   "gloss": "crazy / lost it (usually teasing)",
+   "emojis": "🤪😂🙄",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "jhamela",
+    "jhamla",
+    "pera",
+    "pera lagche",
+    "chap",
+    "chap e achi",
+    "tension"
+   ],
+   "native": [
+    "ঝামেলা",
+    "প্যারা",
+    "চাপ",
+    "টেনশন"
+   ],
+   "gloss": "trouble / stress / hassle",
+   "emojis": "😩😮‍💨😣",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "pera nai",
+    "pera nei",
+    "chap nai",
+    "chap nei",
+    "chill kor",
+    "chil kor",
+    "relax kor"
+   ],
+   "native": [
+    "প্যারা নাই",
+    "চাপ নেই"
+   ],
+   "gloss": "no stress / chill",
+   "emojis": "😎✌️😌"
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "kipte",
+    "kipta",
+    "kanjus",
+    "kenjus"
+   ],
+   "native": [
+    "কিপটে",
+    "কিপ্টা",
+    "কঞ্জুস"
+   ],
+   "gloss": "stingy",
+   "emojis": "🤑😒🙄",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "dhur",
+    "dhurr",
+    "dhet",
+    "dhat",
+    "dhuro",
+    "uff",
+    "ufff",
+    "uffo"
+   ],
+   "native": [
+    "ধুর",
+    "ধেত",
+    "উফ",
+    "উফফ"
+   ],
+   "gloss": "ugh / damn (annoyance)",
+   "emojis": "😒😤🙄",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "ki obostha",
+    "ki khobor",
+    "kemon acho",
+    "kemon achis",
+    "kemon aso",
+    "ki korchis",
+    "ki koro",
+    "ki korcho",
+    "ki kortesos"
+   ],
+   "native": [
+    "কী অবস্থা",
+    "কি অবস্থা",
+    "কি খবর",
+    "কেমন আছো",
+    "কেমন আছিস",
+    "কি করছিস"
+   ],
+   "gloss": "how are you / what's up",
+   "emojis": "👋😊🙂"
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "sotti",
+    "shotti",
+    "sotti naki",
+    "obak",
+    "ki bolchis",
+    "ki bolis",
+    "ki bolo"
+   ],
+   "native": [
+    "সত্যি",
+    "সত্যি নাকি",
+    "অবাক",
+    "কি বলছিস"
+   ],
+   "gloss": "really? / I'm surprised",
+   "emojis": "😮😳😲",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "thik ache",
+    "thik ase",
+    "accha",
+    "achha",
+    "acha",
+    "aiccha",
+    "hmm thik"
+   ],
+   "native": [
+    "ঠিক আছে",
+    "আচ্ছা"
+   ],
+   "gloss": "okay / alright",
+   "emojis": "👍👌🙂",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "dhonnobad",
+    "dhonnyobad",
+    "onek dhonnobad"
+   ],
+   "native": [
+    "ধন্যবাদ",
+    "অনেক ধন্যবাদ"
+   ],
+   "gloss": "thank you",
+   "emojis": "🙏😊❤️"
+  },
+  {
+   "lang": "bn",
+   "kind": "reaction",
+   "roman": [
+    "chapri",
+    "chhapri",
+    "chapri pana"
+   ],
+   "native": [
+    "ছাপরি"
+   ],
+   "gloss": "tacky wannabe (mocking)",
+   "emojis": "🤡😂",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "swear",
+   "roman": [
+    "boka",
+    "bokachoda",
+    "boka choda",
+    "bokachod",
+    "gadha",
+    "gada",
+    "gorur"
+   ],
+   "native": [
+    "বোকা",
+    "বোকাচোদা",
+    "গাধা"
+   ],
+   "gloss": "stupid / idiot (bokachoda = vulgar 'dumbfuck'; between friends often joking)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "swear",
+   "roman": [
+    "shala",
+    "sala",
+    "shalar",
+    "salar",
+    "shala re",
+    "halar",
+    "hala",
+    "halar put"
+   ],
+   "native": [
+    "শালা",
+    "শালার",
+    "হালার",
+    "হালার পুত"
+   ],
+   "gloss": "mild swear ('damn guy'; friendly or angry depending on context)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "swear",
+   "roman": [
+    "bal",
+    "baal",
+    "bal er kotha",
+    "baler",
+    "bainchod",
+    "banchod",
+    "baincod",
+    "madarchod",
+    "magi",
+    "khanki",
+    "khankir pola",
+    "khankir pula",
+    "chudir bhai",
+    "chudi",
+    "choda",
+    "chudbo",
+    "tor mayer",
+    "tor maire",
+    "harami",
+    "haramjada",
+    "shuorer bachcha",
+    "kuttar bachcha",
+    "chodna",
+    "chodon"
+   ],
+   "native": [
+    "বাল",
+    "বালের",
+    "ধোন",
+    "বাড়া",
+    "বাইনচোদ",
+    "মাদারচোদ",
+    "মাগি",
+    "খানকি",
+    "খানকির পোলা",
+    "চুদির ভাই",
+    "চোদা",
+    "চুদি",
+    "তোর মায়ের",
+    "হারামি",
+    "হারামজাদা",
+    "শুয়োরের বাচ্চা",
+    "কুত্তার বাচ্চা"
+   ],
+   "gloss": "strong swear / insult (abusive; close friends sometimes use it as rough banter)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "bn",
+   "kind": "address",
+   "roman": [
+    "bhai",
+    "vai",
+    "bro",
+    "dosto",
+    "mama",
+    "mamu",
+    "bondhu",
+    "beta",
+    "dada",
+    "didi"
+   ],
+   "native": [
+    "ভাই",
+    "দোস্ত",
+    "মামা",
+    "বন্ধু",
+    "দাদা",
+    "দিদি"
+   ],
+   "gloss": "bro / buddy / friend (friendly address)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "tatti",
+    "tatti aa rahi",
+    "tatti lagi",
+    "hagna",
+    "hag raha",
+    "hag rahi",
+    "hagne",
+    "hagne ja raha",
+    "potty",
+    "potty aa rahi",
+    "latrine",
+    "latrin",
+    "toilet jana"
+   ],
+   "native": [
+    "टट्टी",
+    "हगना",
+    "पॉटी",
+    "लैट्रिन",
+    "शौच"
+   ],
+   "gloss": "poop / need to poop (crude, casual)",
+   "emojis": "💩🚽🧻",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "susu",
+    "su su",
+    "peshab",
+    "pishab",
+    "mootna",
+    "mutna",
+    "moot",
+    "susu aa rahi"
+   ],
+   "native": [
+    "सुसु",
+    "पेशाब",
+    "मूत",
+    "मूतना"
+   ],
+   "gloss": "pee (crude or childish)",
+   "emojis": "🚽💦😬",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "paad",
+    "paadna",
+    "paad mara",
+    "paad diya"
+   ],
+   "native": [
+    "पाद",
+    "पादना"
+   ],
+   "gloss": "fart",
+   "emojis": "💨🤢😷",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "neend",
+    "nind",
+    "neend aa rahi",
+    "sona hai",
+    "so ja",
+    "so raha",
+    "so rahi",
+    "sone ja raha",
+    "sojao"
+   ],
+   "native": [
+    "नींद",
+    "नींद आ रही",
+    "सोना है",
+    "सो जा",
+    "सो रहा"
+   ],
+   "gloss": "sleep / sleepy",
+   "emojis": "😴💤🛌"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "bhookh",
+    "bhook",
+    "bhukh",
+    "bhookh lagi",
+    "bhook lagi",
+    "bhukh lagi",
+    "khana",
+    "khaana",
+    "khana kha",
+    "khana khaya",
+    "kha liya"
+   ],
+   "native": [
+    "भूख",
+    "भूख लगी",
+    "खाना",
+    "खाना खाया"
+   ],
+   "gloss": "hungry / food / eating",
+   "emojis": "😋🍽️🤤"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "chai",
+    "chay",
+    "chai peeni",
+    "chai pi lo",
+    "chai piyo"
+   ],
+   "native": [
+    "चाय"
+   ],
+   "gloss": "tea",
+   "emojis": "☕🫖",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "baarish",
+    "barish",
+    "baarish ho rahi",
+    "barsaat",
+    "barish ho rahi"
+   ],
+   "native": [
+    "बारिश",
+    "बरसात",
+    "बारिश हो रही"
+   ],
+   "gloss": "rain",
+   "emojis": "🌧️☔🌦️"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "garmi",
+    "bahut garmi",
+    "garam",
+    "garmi lag rahi"
+   ],
+   "native": [
+    "गर्मी",
+    "गरम",
+    "गर्मी लग रही"
+   ],
+   "gloss": "hot weather",
+   "emojis": "🥵☀️🔥"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "thand",
+    "thandi",
+    "sardi",
+    "thand lag rahi",
+    "kohra"
+   ],
+   "native": [
+    "ठंड",
+    "ठंडी",
+    "सर्दी",
+    "कोहरा"
+   ],
+   "gloss": "cold / winter / fog",
+   "emojis": "🥶❄️🧣"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "padhai",
+    "padhna",
+    "padh raha",
+    "padh rahi",
+    "pariksha",
+    "paper hai",
+    "exam hai",
+    "tuition"
+   ],
+   "native": [
+    "पढ़ाई",
+    "पढ़ना",
+    "परीक्षा",
+    "पेपर है"
+   ],
+   "gloss": "studying / exam",
+   "emojis": "📚✍️😩"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "kaam kar raha",
+    "office ja raha",
+    "kaam pe",
+    "duty"
+   ],
+   "native": [
+    "दफ्तर",
+    "ऑफिस"
+   ],
+   "gloss": "work / office",
+   "emojis": "💼💻😮‍💨",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "pyaar",
+    "pyar",
+    "mohabbat",
+    "ishq",
+    "i love u",
+    "pyaar karta hu",
+    "pyar karti hu"
+   ],
+   "native": [
+    "प्यार",
+    "मोहब्बत",
+    "इश्क",
+    "प्यार करता हूँ"
+   ],
+   "gloss": "love / I love you",
+   "emojis": "❤️🥰😘"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "yaad aa rahi",
+    "yaad aati",
+    "teri yaad",
+    "miss kar raha",
+    "miss kar rahi",
+    "dil toot gaya",
+    "udaas"
+   ],
+   "native": [
+    "याद आ रही",
+    "तेरी याद",
+    "उदास",
+    "दिल टूट गया"
+   ],
+   "gloss": "missing someone / sad",
+   "emojis": "🥺😔💔"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "rona",
+    "ro raha",
+    "ro rahi",
+    "rona aa raha",
+    "ro diya"
+   ],
+   "native": [
+    "रोना",
+    "रो रहा",
+    "रो रही",
+    "रोना आ रहा"
+   ],
+   "gloss": "crying",
+   "emojis": "😭😢🥺"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "gussa",
+    "gussa aa raha",
+    "bahut gussa"
+   ],
+   "native": [
+    "गुस्सा",
+    "गुस्सा आ रहा"
+   ],
+   "gloss": "angry",
+   "emojis": "😡😤"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "darr",
+    "dar lag raha",
+    "darr lag raha",
+    "dar gaya",
+    "dar gayi"
+   ],
+   "native": [
+    "डर",
+    "डर लग रहा",
+    "डर गया"
+   ],
+   "gloss": "scared",
+   "emojis": "😨😱",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "sharam",
+    "sharma gaya",
+    "sharma gayi",
+    "sharmao mat"
+   ],
+   "native": [
+    "शर्म",
+    "शरमा गई"
+   ],
+   "gloss": "shy / embarrassed",
+   "emojis": "🙈😳☺️",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "bimaar",
+    "bimar",
+    "bukhar",
+    "tabiyat kharab",
+    "tabiyat theek nahi",
+    "sardi zukam",
+    "khansi"
+   ],
+   "native": [
+    "बीमार",
+    "बुखार",
+    "तबीयत खराब",
+    "सर्दी जुकाम",
+    "खांसी"
+   ],
+   "gloss": "sick / fever / cold",
+   "emojis": "🤒🤧😷"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "sir dard",
+    "sar dard",
+    "sir dukh raha"
+   ],
+   "native": [
+    "सिर दर्द",
+    "सर दर्द"
+   ],
+   "gloss": "headache",
+   "emojis": "🤕😣"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "janamdin mubarak",
+    "janmdin mubarak",
+    "janamdin",
+    "janmdin",
+    "happy bday",
+    "hbd"
+   ],
+   "native": [
+    "जन्मदिन",
+    "जन्मदिन मुबारक",
+    "जन्मदिन की"
+   ],
+   "gloss": "happy birthday / birthday",
+   "emojis": "🎂🎉🥳"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "shubh ratri",
+    "shub ratri",
+    "good night ji"
+   ],
+   "native": [
+    "शुभ रात्रि"
+   ],
+   "gloss": "good night",
+   "emojis": "🌙😴💤"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "suprabhat",
+    "shubh prabhat",
+    "good morning ji"
+   ],
+   "native": [
+    "सुप्रभात",
+    "शुभ प्रभात"
+   ],
+   "gloss": "good morning",
+   "emojis": "🌅☀️🙏"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "shaadi",
+    "shadi",
+    "shaadi mein",
+    "byah",
+    "dulhan",
+    "baraat"
+   ],
+   "native": [
+    "शादी",
+    "शादी में",
+    "ब्याह",
+    "दुल्हन",
+    "बारात"
+   ],
+   "gloss": "wedding",
+   "emojis": "💍👰🎉"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "diwali",
+    "deepawali",
+    "happy diwali"
+   ],
+   "native": [
+    "दिवाली",
+    "दीपावली"
+   ],
+   "gloss": "Diwali",
+   "emojis": "🪔🎆✨"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "holi",
+    "happy holi"
+   ],
+   "native": [
+    "होली"
+   ],
+   "gloss": "Holi (festival of colours)",
+   "emojis": "🎨🌈🎉",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "eid mubarak",
+    "eid"
+   ],
+   "native": [
+    "ईद",
+    "ईद मुबारक"
+   ],
+   "gloss": "Eid",
+   "emojis": "🌙🕌🎉"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "paisa",
+    "paise",
+    "paisa nahi",
+    "rupaye",
+    "kharcha",
+    "salary aayi"
+   ],
+   "native": [
+    "पैसा",
+    "पैसे",
+    "रुपये",
+    "खर्चा"
+   ],
+   "gloss": "money",
+   "emojis": "💰💸",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "jhagda",
+    "jhagra",
+    "ladai",
+    "ladai ho gayi",
+    "maar dunga",
+    "pitai"
+   ],
+   "native": [
+    "झगड़ा",
+    "लड़ाई",
+    "पिटाई"
+   ],
+   "gloss": "fight / quarrel",
+   "emojis": "😤👊😡"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "ghoomne",
+    "ghumne",
+    "ghoomne chalein",
+    "ghumne chalo",
+    "trip pe",
+    "ghoom aaye"
+   ],
+   "native": [
+    "घूमने",
+    "घूमने चलें"
+   ],
+   "gloss": "going out / trip",
+   "emojis": "🎒🌍🚗"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "ghar",
+    "ghar ja raha",
+    "ghar pahunch",
+    "ghar pe"
+   ],
+   "native": [
+    "घर",
+    "घर पे"
+   ],
+   "gloss": "home",
+   "emojis": "🏠",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "light chali gayi",
+    "bijli nahi",
+    "bijli chali gayi",
+    "light nahi hai"
+   ],
+   "native": [
+    "बिजली नहीं",
+    "बिजली चली गई",
+    "लाइट चली गई"
+   ],
+   "gloss": "power cut",
+   "emojis": "🔌💡😩"
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "match",
+    "cricket",
+    "match dekha",
+    "match dekh raha"
+   ],
+   "native": [
+    "मैच",
+    "क्रिकेट"
+   ],
+   "gloss": "cricket match",
+   "emojis": "🏏🔥",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "topic",
+   "roman": [
+    "daaru",
+    "daru",
+    "peg",
+    "daaru party",
+    "talli",
+    "tulli"
+   ],
+   "native": [
+    "दारू",
+    "पैग",
+    "टल्ली"
+   ],
+   "gloss": "alcohol / drunk",
+   "emojis": "🍻🥃🥴",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "mast",
+    "mazaa",
+    "maza",
+    "maja",
+    "mazaa aa gaya",
+    "maja aa gaya",
+    "bindaas",
+    "jhakaas",
+    "jhakkas",
+    "kadak",
+    "zabardast",
+    "jabardast",
+    "kamaal",
+    "dhinchak",
+    "bawaal",
+    "bawal",
+    "fadu",
+    "solid",
+    "ekdum mast",
+    "kya baat",
+    "kya baat hai",
+    "wah",
+    "waah",
+    "bhaukaal",
+    "bhaukal"
+   ],
+   "native": [
+    "मस्त",
+    "मज़ा",
+    "मजा",
+    "ज़बरदस्त",
+    "जबरदस्त",
+    "कमाल",
+    "बवाल",
+    "वाह",
+    "क्या बात है"
+   ],
+   "gloss": "awesome / fun / well done",
+   "emojis": "🔥😍👏",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "ekdum",
+    "ekdam",
+    "bilkul",
+    "sahi hai",
+    "sahi baat"
+   ],
+   "native": [
+    "एकदम",
+    "बिल्कुल",
+    "सही है",
+    "सही बात"
+   ],
+   "gloss": "totally / exactly right",
+   "emojis": "💯👌🤝",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "bakwas",
+    "bakwaas",
+    "faltu",
+    "bekar",
+    "ghatiya",
+    "ghanta",
+    "bhaad mein jao",
+    "bhad me jao"
+   ],
+   "native": [
+    "बकवास",
+    "फालतू",
+    "बेकार",
+    "घटिया",
+    "घंटा",
+    "भाड़ में जाओ"
+   ],
+   "gloss": "rubbish / useless / get lost",
+   "emojis": "🙄👎😒",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "pagal",
+    "paagal",
+    "pagla",
+    "pagli",
+    "dimag kharab",
+    "dimaag kharab",
+    "sanki",
+    "tu pagal hai"
+   ],
+   "native": [
+    "पागल",
+    "दिमाग खराब",
+    "सनकी"
+   ],
+   "gloss": "crazy (often teasing)",
+   "emojis": "🤪😂🙄",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "jugaad",
+    "jugad",
+    "jugaadu"
+   ],
+   "native": [
+    "जुगाड़",
+    "जुगाड़ू"
+   ],
+   "gloss": "clever hack / makeshift fix",
+   "emojis": "😎💡🛠️",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "kya scene hai",
+    "scene kya hai",
+    "kya scene",
+    "scene"
+   ],
+   "native": [],
+   "gloss": "what's the plan / what's up",
+   "emojis": "👀🤔😏",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "lafda",
+    "locha",
+    "panga",
+    "jhol",
+    "jhamela",
+    "kalesh"
+   ],
+   "native": [
+    "लफड़ा",
+    "लोचा",
+    "पंगा",
+    "झोल",
+    "झमेला",
+    "कलेश"
+   ],
+   "gloss": "trouble / mess / drama",
+   "emojis": "😬🙄😩",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "nautanki",
+    "drama",
+    "drama queen",
+    "filmy",
+    "overacting"
+   ],
+   "native": [
+    "नौटंकी",
+    "ड्रामा",
+    "फिल्मी"
+   ],
+   "gloss": "dramatic / over the top",
+   "emojis": "🎭🙄😂",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "senti",
+    "emotional ho gaya",
+    "senti ho gaya"
+   ],
+   "native": [
+    "सेंटी"
+   ],
+   "gloss": "getting emotional",
+   "emojis": "🥺😢",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "fattu",
+    "darpok",
+    "phattu"
+   ],
+   "native": [
+    "फट्टू",
+    "डरपोक"
+   ],
+   "gloss": "coward (teasing)",
+   "emojis": "😂😨",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "chamcha",
+    "chamchagiri"
+   ],
+   "native": [
+    "चमचा",
+    "चमचागिरी"
+   ],
+   "gloss": "sycophant / bootlicker",
+   "emojis": "🥄🙄",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "ullu",
+    "ullu ka pattha",
+    "gadha",
+    "gadhe",
+    "bewakoof",
+    "bevakoof",
+    "buddhu"
+   ],
+   "native": [
+    "उल्लू",
+    "गधा",
+    "गधे",
+    "बेवकूफ",
+    "बुद्धू"
+   ],
+   "gloss": "fool / idiot (often teasing)",
+   "emojis": "🤦😂🙄",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "chapri",
+    "chhapri",
+    "tapori",
+    "chindi"
+   ],
+   "native": [
+    "छपरी",
+    "टपोरी",
+    "चिंदी"
+   ],
+   "gloss": "tacky / cheap / thug wannabe (mocking)",
+   "emojis": "🤡😂",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "bas kar",
+    "chup kar",
+    "chup",
+    "chal nikal",
+    "nikal"
+   ],
+   "native": [
+    "बस कर",
+    "चुप कर",
+    "चल निकल"
+   ],
+   "gloss": "stop it / shut up / get lost (often joking)",
+   "emojis": "🤐🙄😂",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "bakchodi",
+    "bakchod",
+    "bakchodi mat kar",
+    "timepass"
+   ],
+   "native": [
+    "बकचोदी",
+    "टाइमपास"
+   ],
+   "gloss": "messing around / talking nonsense (vulgar slang)",
+   "emojis": "😂🤡🙄",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "dhanyawad",
+    "dhanyavaad",
+    "shukriya",
+    "shukria"
+   ],
+   "native": [
+    "धन्यवाद",
+    "शुक्रिया"
+   ],
+   "gloss": "thank you",
+   "emojis": "🙏😊❤️"
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "kya hua",
+    "kya ho gaya",
+    "sach mein",
+    "sachi",
+    "kya bol raha"
+   ],
+   "native": [
+    "क्या हुआ",
+    "सच में"
+   ],
+   "gloss": "what happened? / really?",
+   "emojis": "😮🤔😳",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "reaction",
+   "roman": [
+    "theek hai",
+    "thik hai",
+    "accha",
+    "acha",
+    "achha",
+    "haan thik"
+   ],
+   "native": [
+    "ठीक है",
+    "अच्छा"
+   ],
+   "gloss": "okay / alright",
+   "emojis": "👍👌🙂",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "swear",
+   "roman": [
+    "chutiya",
+    "chutiye",
+    "chutiyapa",
+    "bc",
+    "mc",
+    "bsdk",
+    "bkl",
+    "bhenchod",
+    "behenchod",
+    "bhenchodd",
+    "madarchod",
+    "maderchod",
+    "bhosdike",
+    "bhosdiwale",
+    "bhosdi",
+    "lodu",
+    "lode",
+    "lund",
+    "lawda",
+    "loda",
+    "gaand",
+    "gand",
+    "gandu",
+    "randi",
+    "harami",
+    "haramkhor",
+    "kamina",
+    "kamine",
+    "kameena",
+    "saala",
+    "sala",
+    "saali",
+    "jhaant",
+    "jhatu",
+    "chodu"
+   ],
+   "native": [
+    "चूतिया",
+    "भेनचोद",
+    "बहनचोद",
+    "मादरचोद",
+    "भोसड़ीके",
+    "लोडू",
+    "लौड़ा",
+    "लंड",
+    "गांड",
+    "गांडू",
+    "रंडी",
+    "हरामी",
+    "कमीना",
+    "साला",
+    "साली",
+    "झाटू"
+   ],
+   "gloss": "strong swear / insult (abusive; close friends often use it as banter)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "address",
+   "roman": [
+    "bhai",
+    "bhaiya",
+    "yaar",
+    "yr",
+    "bro",
+    "bhidu",
+    "bhaisaab",
+    "beta",
+    "dost"
+   ],
+   "native": [
+    "भाई",
+    "यार",
+    "भैया",
+    "दोस्त"
+   ],
+   "gloss": "bro / buddy (friendly address)",
+   "emojis": "",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "lit",
+    "its lit",
+    "so lit",
+    "fire",
+    "this is fire"
+   ],
+   "native": [],
+   "gloss": "amazing / exciting",
+   "emojis": "🔥🤩",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "no cap",
+    "fr",
+    "frfr",
+    "for real",
+    "deadass"
+   ],
+   "native": [],
+   "gloss": "honestly / for real",
+   "emojis": "💯🧢",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "cap",
+    "thats cap",
+    "stop the cap",
+    "capping"
+   ],
+   "native": [],
+   "gloss": "that's a lie",
+   "emojis": "🧢🙄",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "sus",
+    "kinda sus",
+    "so sus",
+    "thats sus"
+   ],
+   "native": [],
+   "gloss": "suspicious",
+   "emojis": "🤨👀",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "slay",
+    "slayed",
+    "she ate",
+    "periodt"
+   ],
+   "native": [],
+   "gloss": "did amazingly / fierce",
+   "emojis": "💅🔥👑",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "bussin",
+    "bussing",
+    "its bussin"
+   ],
+   "native": [],
+   "gloss": "really tasty / great",
+   "emojis": "😋🔥",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "im dead",
+    "i'm dead",
+    "ded",
+    "lmao",
+    "lmfao",
+    "rofl",
+    "im crying",
+    "i'm crying",
+    "crying rn"
+   ],
+   "native": [],
+   "gloss": "laughing hard",
+   "emojis": "💀😂🤣",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "goat",
+    "the goat",
+    "goated"
+   ],
+   "native": [],
+   "gloss": "greatest of all time",
+   "emojis": "🐐🔥🏆",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "vibe",
+    "vibes",
+    "vibing",
+    "good vibes",
+    "vibe check"
+   ],
+   "native": [],
+   "gloss": "mood / atmosphere",
+   "emojis": "✨😌🎶",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "mid",
+    "kinda mid",
+    "so mid"
+   ],
+   "native": [],
+   "gloss": "mediocre",
+   "emojis": "😐🥱",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "rizz",
+    "unspoken rizz",
+    "rizzler"
+   ],
+   "native": [],
+   "gloss": "charm / flirting skill",
+   "emojis": "😏😎🔥",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "simp",
+    "simping",
+    "such a simp"
+   ],
+   "native": [],
+   "gloss": "overly devoted admirer (teasing)",
+   "emojis": "🥺🤡😂",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "bet",
+    "bet bet"
+   ],
+   "native": [],
+   "gloss": "okay / deal",
+   "emojis": "👍🤝💯",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "the ick",
+    "ick",
+    "gave me the ick"
+   ],
+   "native": [],
+   "gloss": "turned off / disgusted",
+   "emojis": "🤢😬",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "salty",
+    "so salty"
+   ],
+   "native": [],
+   "gloss": "bitter / annoyed",
+   "emojis": "🧂😒",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "shook",
+    "im shook",
+    "i'm shook"
+   ],
+   "native": [],
+   "gloss": "shocked",
+   "emojis": "😳😱",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "spill the tea",
+    "the tea",
+    "whats the tea"
+   ],
+   "native": [],
+   "gloss": "gossip",
+   "emojis": "☕👀",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "flex",
+    "flexing",
+    "weird flex"
+   ],
+   "native": [],
+   "gloss": "showing off",
+   "emojis": "💪😎",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "cringe",
+    "so cringe",
+    "cringey",
+    "cringy"
+   ],
+   "native": [],
+   "gloss": "embarrassing",
+   "emojis": "😬🤦",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "smh",
+    "bruh",
+    "bro what",
+    "wtf",
+    "wth"
+   ],
+   "native": [],
+   "gloss": "disbelief / disappointment",
+   "emojis": "🤦😑🙄",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "omw",
+    "on my way",
+    "otw"
+   ],
+   "native": [],
+   "gloss": "on my way",
+   "emojis": "🏃🚗",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "ily",
+    "ilysm",
+    "love u",
+    "luv u",
+    "love you"
+   ],
+   "native": [],
+   "gloss": "I love you",
+   "emojis": "❤️🥰😘",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "gn",
+    "nighty",
+    "good nite"
+   ],
+   "native": [],
+   "gloss": "good night",
+   "emojis": "🌙😴💤",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "gm",
+    "gmorning",
+    "mornin"
+   ],
+   "native": [],
+   "gloss": "good morning",
+   "emojis": "☀️😊",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "reaction",
+   "roman": [
+    "touch grass",
+    "go touch grass"
+   ],
+   "native": [],
+   "gloss": "go outside / get off the internet (teasing)",
+   "emojis": "🌱😂",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "topic",
+   "roman": [
+    "poop",
+    "pooping",
+    "need to poop",
+    "gotta poop",
+    "number two",
+    "taking a dump",
+    "need to shit",
+    "gotta shit"
+   ],
+   "native": [],
+   "gloss": "poop / need the toilet",
+   "emojis": "💩🚽🧻",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "topic",
+   "roman": [
+    "pee",
+    "need to pee",
+    "gotta pee",
+    "peeing"
+   ],
+   "native": [],
+   "gloss": "pee / need the toilet",
+   "emojis": "🚽💦😬",
+   "inflect": false,
+   "fold": false
+  },
+  {
+   "lang": "en",
+   "kind": "topic",
+   "roman": [
+    "fart",
+    "farted",
+    "farting"
+   ],
+   "native": [],
+   "gloss": "fart",
+   "emojis": "💨🤢😷",
+   "inflect": false
+  },
+  {
+   "lang": "en",
+   "kind": "topic",
+   "roman": [
+    "hungover",
+    "hangover",
+    "drunk af",
+    "tipsy"
+   ],
+   "native": [],
+   "gloss": "drunk / hungover",
+   "emojis": "🥴🍻🤢",
+   "inflect": false
+  },
+  {
+   "lang": "hi",
+   "kind": "swear",
+   "roman": [
+    "kutta",
+    "kutte",
+    "kutti",
+    "kutta kahin ka"
+   ],
+   "native": [
+    "कुत्ता",
+    "कुत्ते"
+   ],
+   "gloss": "dog (literal) or the insult 'dog' (judge from context)",
+   "emojis": "",
+   "inflect": false
+  }
+ ]
+}

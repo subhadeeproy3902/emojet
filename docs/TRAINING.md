@@ -178,3 +178,65 @@ real/mined examples of "haga" in the slang data and the document-frequency filte
 one epoch isn't enough exposure to a few hundred examples inside a 50k-message training run; would need
 either more epochs on the slang data specifically, or oversampling it harder than ×3. Not re-run yet — flagged
 for the owner to decide whether it's worth another round before release.
+
+## Round 3 (2026-10-22): slang and everyday Banglish/Hinglish, done properly
+
+### Why round 2 didn't fix "Haga pacche"
+1. **Half its slang data was junk.** Terms from the Bengali/Hindi lists were matched as raw substrings: "haga" fired inside
+   "bhagao"/"Bhagavad", "nti"/"pla"/"hol"/"chen" inside ordinary words. 32,892 of 67,230 such messages had no slang, and they
+   were weighted ×3. Their language came from the word list, not the message (Hindi tweets tagged Bengali).
+2. **Typed emojis threw the labeller's away.** Training used `gold or silver`: a real "হাগু 😂" message taught 😂 only, never 💩.
+3. **The labeller was never told what slang means**, and Qwen does not know Banglish "haga".
+4. **Everyday Banglish is missing too, not just slang.** Our Bengali corpus is reviews and YouTube comments: "ghum pacche",
+   "brishti porche", "cha khabi" barely occur (about 200 poop-related messages in 2.9 M).
+
+Baseline (round-2 phone model, `scripts/rank_sim.py`): slang/everyday probes **29/72** (bn 16/44, hi 7/19, en 6/9),
+lookalikes clean 5/8, chat cases 22/40 top-1, 29/40 top-3.
+
+### What round 3 changes
+- `training/data/chat_lexicon.json`: 146 entries (Bengali/Banglish, Hindi/Hinglish, English internet slang), ~1,300
+  spellings in Latin and native script. Each has a meaning and, for things/states, emojis. Kinds: topic (always applies),
+  reaction (short messages only), swear and address (meaning only). Ambiguous spellings were removed after a scan of the real
+  corpus (বাজে = o'clock, সেই = that, cha = want, puja = a name, পরীক্ষা করে = testing a product, কাজ করছে = it works,
+  khuda = God, nite paren = you can buy, based on, ...).
+- `training/chatlex.py`: one matcher used by the miner, the labeller and training. Whole words, spelling folding for
+  romanized text (pacche/pachhe/pache, hagaa, valobasi/bhalobashi), suffixes only from real endings (বৃষ্টিতে, brishtite;
+  not শীতল), exact match for swears (folding would turn "chhod do" into a swear), and per-language gating.
+- `slang_data.py`: mines with the matcher; language from the message; external profanity lists filtered by document
+  frequency per language and script (0.1%; curated profanity lists exempt); asserts every target contains its word.
+- `annotate.py --round3`: the meaning of each word goes into the prompt; round-robin over words so every word gets labels
+  before time runs out; then up to 1.25 h of synthetic WhatsApp-style lines per lexicon entry (kept only if the matcher
+  finds the word; stops itself if most lines miss it).
+- `build_notebook.py --round3`: continue from round 2. One soft target per message: typed emojis 1.0, labeller 0.5, word
+  meaning 0.4. Meaning emojis on every real message that contains a lexicon word. Round-2 "slang" weighting only if a
+  lexicon word is really there. Synthetic lines ×2 at weight 0.5 (never a test message). Spelling variation on repeated
+  Banglish/Hinglish copies. Old data replayed at 40-80%. Starting-model evaluation, halfway evaluation, final comparison
+  table (↓ WORSE flags). An out-of-memory batch is skipped; any other crash still evaluates and saves.
+- `training/data/eval_sets.json`: `slang_probes` (72: Banglish, Bengali script, Hinglish, Devanagari, English slang,
+  misspellings, replies) and `slang_negatives` (8 lookalikes that must not get toilet/swear emojis). Test only.
+
+### Run order (links: https://www.kaggle.com/code/subhadeep3902/<slug>)
+| # | Kaggle notebook | Machine | Time |
+|---|---|---|---|
+| 1 | `emojet-slang-3` | CPU | ~30-45 min |
+| 1b | `emojet-v2-round3-smoke` (catches code errors on existing data) | T4 | ~40 min |
+| 2 | `emojet-annotate-3` | 2×T4 | ~4 h |
+| 3 | `emojet-v2-round3` | T4 | ~10 h |
+
+```bash
+# 1 and 1b (independent)
+python3 training/build_slang.py && python3 scripts/kaggle.py push training/kaggle/emojet_slang.py emojet-slang-3 --internet --source=subhadeep3902/emojet-data
+python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 --smoke && python3 scripts/kaggle.py push training/kaggle/emojet_v2_round3_smoke.ipynb emojet-v2-round3-smoke --gpu --internet \
+    --source=subhadeep3902/emojet-v2-round2 --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-tones \
+    --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2
+# 2 (after 1)
+python3 training/build_annotate.py --round3 && python3 scripts/kaggle.py push training/kaggle/emojet_annotate_round3.py emojet-annotate-3 --gpu --internet \
+    --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-slang-3 --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2
+# 3 (after 2 and a clean 1b)
+python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && python3 scripts/kaggle.py push training/kaggle/emojet_v2_round3.ipynb emojet-v2-round3 --gpu --internet \
+    --source=subhadeep3902/emojet-v2-round2 --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-tones --source=subhadeep3902/emojet-slang-3 \
+    --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2 --source=subhadeep3902/emojet-annotate-3
+```
+Attach only one model (`emojet-v2-round2`): the starting model is found by its `emojet.json`. Do not attach `emojet-slang`
+(round 2) to steps 2-3: its targets are the junk ones. After step 3: download with `scripts/kaggle.py output` (now checks
+the file size), quantize Q4_K_M, `scripts/rank_sim.py` against the baseline above, and ship only if nothing got worse.

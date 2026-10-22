@@ -102,6 +102,27 @@ def main():
             h1 += norm(EMOJIS[top[0]]) in ok
             h3 += any(norm(EMOJIS[i]) in ok for i in top[:3])
         print(f"{name:7s} chat cases top-1: {h1}/{len(sets.get('chat_cases', []))}  top-3: {h3}/{len(sets.get('chat_cases', []))}")
+        # slang / everyday Banglish-Hinglish probes (round 3) and lookalikes that must NOT get toilet/swear emojis
+        sp, sn = sets.get("slang_probes", []), sets.get("slang_negatives", [])
+        if sp:
+            h6, h3, per, tot, miss = 0, 0, {}, {}, []
+            for c in sp:
+                top, _ = fn(c["text"], c.get("reply"))
+                ok = {norm(x) for x in c["ok_emojis"]}
+                a6 = any(norm(EMOJIS[i]) in ok for i in top)
+                h6 += a6; h3 += any(norm(EMOJIS[i]) in ok for i in top[:3])
+                per[c["lang"]] = per.get(c["lang"], 0) + a6; tot[c["lang"]] = tot.get(c["lang"], 0) + 1
+                if not a6: miss.append(f"{c['text']} → {''.join(EMOJIS[i] for i in top)}")
+            langs = "  ".join(f"{l} {per[l]}/{tot[l]}" for l in sorted(tot))
+            print(f"{name:7s} slang probes hit@6: {h6}/{len(sp)}  hit@3: {h3}/{len(sp)}  ({langs})")
+            for m in miss: print(f"          ✗ {m}")
+        if sn:
+            bad = []
+            for c in sn:
+                top, _ = fn(c["text"])
+                if {norm(EMOJIS[i]) for i in top} & {norm(x) for x in c["bad_emojis"]}:
+                    bad.append(f"{c['text']} → {''.join(EMOJIS[i] for i in top)}")
+            print(f"{name:7s} lookalikes clean: {len(sn) - len(bad)}/{len(sn)}" + "".join(f"\n          ✗ {b}" for b in bad))
     print()
     probes = [("Program", None), ("Laptop", None), ("code", None), ("I'm writing code all night", None),
               ("my program finally works", None), ("debugging this bug for hours", None), ("need a new laptop", None),

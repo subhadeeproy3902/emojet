@@ -1,4 +1,4 @@
-"""Emojet slang + swearing data (runs on Kaggle, CPU, internet on). Round 2.
+"""Emojet slang + swearing + everyday chat words (runs on Kaggle, CPU, internet on). Round 3.
 
 1. Lexicons of slang and swear words (EN, Hindi, Hinglish, Bengali, Banglish) from open lists, plus a hand list
    of everyday Hinglish/Banglish chat slang that no open list covers.
@@ -8,7 +8,8 @@
 
 Output /kaggle/working/:
   slang/lexicon.json        {variety: [{"term", "src", "severity"?, "meaning"?}]}
-  slang/targets.jsonl.gz    {"t", "l", "s": "slang-<lang>", "e": [emoji ids typed], "term"}   -> annotate round 2
+  slang/targets.jsonl.gz    {"t", "l", "s": "slang-<variety>", "e": [emoji ids typed], "term", "kind", "curated", "notes"}  -> annotate
+  slang/lexicon_used.json   curated chat lexicon + the external terms that survived the common-word filter
   tones/tones.jsonl.gz      same format as tone_data.py (human labels), read by the training notebook
   slang/stats.json
 
@@ -31,6 +32,8 @@ import urllib.request
 
 SMOKE = __SMOKE__
 TAXONOMY_B64 = "__TAXONOMY__"
+CHATLEX_B64 = "__CHATLEX__"            # training/chatlex.py
+CHAT_LEXICON_B64 = "__CHAT_LEXICON__"    # training/data/chat_lexicon.json
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "emoji==2.14.1"], check=False)
 import emoji  # noqa: E402
 from datasets import load_dataset  # noqa: E402
@@ -267,62 +270,88 @@ for name, fn in [("jkkamal", jkkamal), ("bn_multilabel", bn_multilabel), ("bn_to
                  ("hinglish_hate", hinglish_hate), ("hasoc", hasoc)]:
     run(name, fn)
 
-# ---------------------------------------------------------------- 3. find real messages that use the slang
+# ---------------------------------------------------------------- 3. find real messages that use the words
+# Round 3: one matcher for everything (training/chatlex.py, inlined below): whole words, spelling folding, and the
+# language of the MESSAGE, not of the list a word came from. Round 2 matched raw substrings ("haga" inside
+# "bhagao", "nti" inside any word): half of its 67k "slang" messages had no slang in them.
+_ns = {}
+exec(gzip.decompress(base64.b64decode(CHATLEX_B64)).decode("utf-8"), _ns)
+Lexicon = _ns["Lexicon"]
+CURATED = json.loads(gzip.decompress(base64.b64decode(CHAT_LEXICON_B64)).decode("utf-8"))["entries"]
 LANG_OF = {"banglish": "bn", "bengali": "bn", "hinglish": "hi", "hindi": "hi", "english": "en"}
-roman_terms = {t: v for v in ("banglish", "hinglish") for t in lex[v]}
-script_terms = {t: v for v in ("bengali", "hindi") for t in lex[v] if len(t) >= 3}
-WORD = re.compile(r"[a-z]+")
-PER_TERM = 60 if SMOKE else 400
-per_term = collections.Counter()
+curated_terms = {t.lower() for e in CURATED for t in e["roman"] + e["native"]}
+external = []
+for variety, d in lex.items():
+    for t, info in d.items():
+        if t in curated_terms or re.search(r"[0-9@$*#!_.]", t):                  # leetspeak: rare in real chat
+            continue
+        if info["src"] == "emojet-hand" or (info["src"] == "deshi-slang" and str(info.get("severity")) == "1"):
+            continue                       # round 2's hand list ("kya", "tor") -> the curated lexicon; severity 1 = ordinary words
+        if t.isascii() and (len(re.sub(r"[^a-z]", "", t)) < 3 or len(t.split()) > 4):
+            continue
+        native = not t.isascii()
+        external.append({"lang": LANG_OF[variety], "kind": "swear", "roman": [] if native else [t], "native": [t] if native else [],
+                         "gloss": (info.get("meaning") or "insult, swear or crude slang") + " (from a profanity list; can also be an "
+                                  "ordinary word, judge from context)", "emojis": "", "inflect": False, "src": info["src"]})
+
+real_files = sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True) +
+                    glob.glob("/kaggle/input/**/real/plain.jsonl.gz", recursive=True))
+def script_of(text):
+    return "native" if re.search("[\u0900-\u09ff]", text) else "roman"
+
+
+sample, n_pop = [], collections.Counter()
+for path in real_files:
+    for k, line in enumerate(gzip.open(path, "rt", encoding="utf-8")):
+        if k % 25 == 0:
+            r = json.loads(line)
+            sample.append(r)
+            n_pop[(Lexicon.lang_of(r["t"], r["l"]), script_of(r["t"]))] += 1
+        if LIMIT and k >= LIMIT * 20: break
+# A listed word in more than 0.1% of ordinary messages of its own language AND script is just a word (मारना = to hit).
+# Per script: Hindi data is mostly Devanagari, which hid how common romanized "kya" is in Hinglish.
+L_ext = Lexicon(external)
+df = collections.Counter(k for r in sample for k in {k for k, _ in L_ext.find(r["t"], r["l"])})
+def pop(e):
+    sc = "native" if e["native"] else "roman"
+    return sum(n for (l, s_), n in n_pop.items() if s_ == sc and (e["lang"] == "en" or l == e["lang"]))
+TRUSTED = {"ldnoobw", "mathur", "shadow4ever"}   # curated profanity lists: their words are swears even when common
+common = {k for k, n in df.items() if external[k]["src"] not in TRUSTED and n / max(1, pop(external[k])) > 0.001}
+log(f"external terms: {len(external):,}, dropped as common words: {len(common)}:",
+    [external[k]["roman"][:1] + external[k]["native"][:1] for k in sorted(common, key=lambda k: -df[k])[:60]])
+ALL = CURATED + [e for k, e in enumerate(external) if k not in common]
+L = Lexicon(ALL)
+PER_ENTRY = {"topic": 700, "reaction": 300, "swear": 150, "address": 0}
+per = collections.Counter()
 targets, seen = [], set()
-
-
-SINGLE = {t for t in roman_terms if " " not in t}
-MULTI = [t for t in roman_terms if " " in t]
-SCRIPT_RE = re.compile("|".join(sorted(map(re.escape, script_terms), key=len, reverse=True))) if script_terms else None
-
-
-def match(text):
-    """The rarest-so-far slang term in the message (so common words like 'bhai' don't crowd out rare ones)."""
-    low = text.lower()
-    words = WORD.findall(low)
-    cands = [(t, roman_terms[t]) for t in set(words) & SINGLE]
-    if MULTI:
-        joined = " " + " ".join(words) + " "
-        cands += [(t, roman_terms[t]) for t in MULTI if (" " + t + " ") in joined]
-    if SCRIPT_RE:
-        cands += [(t, script_terms[t]) for t in set(SCRIPT_RE.findall(low))]
-    cands = [c for c in cands if per_term[c[0]] < PER_TERM]
-    return min(cands, key=lambda c: per_term[c[0]]) if cands else None
 
 
 def offer(raw_text, lang, src, typed=None):
     text = clean(raw_text)
-    if not 3 <= len(text) <= 500:
+    if not 3 <= len(text) <= 500 or text.lower() in seen:
         return
-    m = match(text)
-    if not m:
+    hits = [(k, t) for k, t in L.find(text, lang) if per[k] < PER_ENTRY[ALL[k]["kind"]] // (10 if SMOKE else 1)]
+    if not hits:
         return
-    t, variety = m
-    key = text.lower()
-    if key in seen:
-        return
-    seen.add(key)
-    per_term[t] += 1
-    targets.append({"t": text, "l": LANG_OF.get(variety, lang), "s": "slang-" + variety, "e": typed or emoji_labels(raw_text), "term": t})
+    k, t = min(hits, key=lambda h: (per[h[0]], h[0] >= len(CURATED)))     # rarest so far; curated wins ties
+    seen.add(text.lower())
+    per[k] += 1
+    msg_lang = Lexicon.lang_of(text, lang)
+    roman = not re.search("[ऀ-৿]", text)
+    variety = {"bn": "banglish" if roman else "bengali", "hi": "hinglish" if roman else "hindi"}.get(msg_lang, "english")
+    targets.append({"t": text, "l": msg_lang, "s": "slang-" + variety, "e": typed if typed is not None else emoji_labels(raw_text),
+                    "term": t, "kind": ALL[k]["kind"], "curated": k < len(CURATED), "notes": L.notes(text, lang), "src": src})
 
 
 def mine():
     for text, lang, src in labelled_texts:
         offer(text, lang, src)
     log("  from slang/abuse sets:", len(targets))
-    for path in sorted(glob.glob("/kaggle/input/**/real/train.jsonl.gz", recursive=True) +
-                       glob.glob("/kaggle/input/**/real/plain.jsonl.gz", recursive=True)):
+    for path in real_files:
         for k, line in enumerate(gzip.open(path, "rt", encoding="utf-8")):
             if LIMIT and k >= LIMIT * 20: break
             r = json.loads(line)
-            if r["l"] in ("bn", "hi"):
-                offer(r["t"], r["l"], r.get("s"), typed=r.get("e"))
+            offer(r["t"], r["l"], r.get("s"), typed=r.get("e"))
         log("  after", os.path.basename(path), len(targets))
 
 
@@ -334,7 +363,8 @@ def urban_dictionary():
         text = clean(r["example"])
         if 3 <= len(text) <= 400 and text.lower() not in seen:
             seen.add(text.lower())
-            targets.append({"t": text, "l": "en", "s": "slang-english", "e": [], "term": str(r.get("word", ""))[:40]})
+            targets.append({"t": text, "l": "en", "s": "slang-english", "e": [], "term": str(r.get("word", ""))[:40], "kind": "swear",
+                            "curated": False, "notes": [f"{str(r.get('word', ''))[:40]} = {clean(r.get('definition', ''))[:120]}"], "src": "urbandictionary"})
             n += 1
     log("  urban dictionary examples:", n)
 
@@ -349,14 +379,17 @@ with gzip.open("/kaggle/working/slang/targets.jsonl.gz", "wt", encoding="utf-8")
 with gzip.open("/kaggle/working/tones/tones.jsonl.gz", "wt", encoding="utf-8") as fh:
     for r in tone_rows:
         fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-stats = {"lexicon": {v: len(d) for v, d in lex.items()}, "targets": len(targets),
-         "targets_per_variety": dict(collections.Counter(r["s"] for r in targets)),
+stats = {"lexicon": {v: len(d) for v, d in lex.items()}, "external_kept": len(ALL) - len(CURATED), "external_common": len(common),
+         "targets": len(targets), "targets_per_variety": dict(collections.Counter(r["s"] for r in targets)),
+         "targets_per_kind": dict(collections.Counter(r["kind"] for r in targets)),
          "tone_rows": len(tone_rows), "tone_rows_per_source": dict(collections.Counter(r["s"] for r in tone_rows)),
-         "top_terms": per_term.most_common(60),
-         "owner_terms": {t: per_term.get(t, 0) for t in ["haga", "hagu", "haga pacche", "ekdom", "matha kharap", "pagol", "bokachoda",
-                                                         "ekdum", "jhakaas", "bc", "chutiya", "bsdk"]},
-         "samples": [(r["s"], r["term"], r["t"][:100]) for r in targets[:40]]}
+         "curated": {f"{e['lang']} {(e['roman'] or e['native'])[0]}": per[k] for k, e in enumerate(CURATED)},
+         "top_external": [((ALL[k]["roman"] or ALL[k]["native"])[0], n) for k, n in per.most_common() if k >= len(CURATED)][:60],
+         "samples": [(r["s"], r["term"], r["notes"][:1], r["t"][:100]) for r in targets[:60]]}
 json.dump(stats, open("/kaggle/working/slang/stats.json", "w"), ensure_ascii=False, indent=1)
+json.dump(ALL, open("/kaggle/working/slang/lexicon_used.json", "w"), ensure_ascii=False)
 log(json.dumps({k: v for k, v in stats.items() if k != "samples"}, ensure_ascii=False, indent=1))
-for s in stats["samples"][:25]:
-    print(s)
+for s_ in stats["samples"][:40]:
+    print(s_)
+# every target must really contain its word (round 2's bug); fail loudly if the matcher regresses
+assert all(any(t == r["term"] for _, t in L.find(r["t"], r["l"])) for r in targets if r["src"] != "urbandictionary"), "target without its word"
