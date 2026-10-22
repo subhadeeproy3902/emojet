@@ -17,6 +17,9 @@ REAL = "--real" in sys.argv     # Emojet-v2: from v2-pre + real messages (EN/HI/
 ROUND2 = "--round2" in sys.argv # Emojet-v2 round 2: continue from emojet-v2-real, + slang data, more Banglish/Hinglish weight
 ROUND3 = "--round3" in sys.argv # Emojet-v2 round 3: continue from round 2; clean slang + chat-word meanings + synthetic chat
 LLAMA_CPP_COMMIT = "2e7c58c5477478c8cf6e199cfaa5dcd5a4319c81"
+# round 2 = the model on the phone: every new round must beat it (round 3 measured it as its starting point)
+_r3 = ROOT / "data/kaggle/emojet-v2-round3/emojet-v2/emojet.json"
+REFERENCE = json.loads(_r3.read_text())["baseline"] if _r3.exists() else {}
 
 import base64 as _b64, gzip as _gz
 _FILES = ["labels/emoji-catalog.json", "labels/tones.json", "training/data/goemotions_map.json",
@@ -63,12 +66,13 @@ RESUME = {RESUME}                                          # True = continue Emo
 V2 = {V2}                                                  # True = train Emojet-v2 (pre) from the final v1
 REAL = {REAL}                                              # True = Emojet-v2 on real messages, from v2-pre
 ROUND2 = {ROUND2}                                          # True = continue Emojet-v2 (round 2): slang + more Banglish/Hinglish
-ROUND3 = {ROUND3}                                          # True = continue round 2 (round 3): clean slang, word meanings, synthetic chat
+ROUND3 = {ROUND3}                                          # True = round 3(b): clean slang, word meanings, synthetic chat
+REFERENCE = {json.dumps(REFERENCE)}                         # round-2 metrics (the shipped model)
 if ROUND2 or ROUND3: REAL = True
-LANG_REPEAT = {{"bn": 3, "hi": 2, "en": 1}} if ROUND2 else {{"bn": 2, "hi": 1, "en": 1}}   # times each real message is seen
+LANG_REPEAT = {{"bn": 3, "hi": 2, "en": 1}} if (ROUND2 or ROUND3) else {{"bn": 2, "hi": 1, "en": 1}}   # times each real message is seen
 # round 3: data seen in earlier rounds is replayed at a fraction (no forgetting), so most of the time goes to new data
 REPLAY = {{"emojinize": 0.5, "emojinize-span": 0.5, "goemotions": 0.6, "chat-objects": 0.5, "topic-chat": 0.5, "toxicity": 0.5,
-          "formality": 0.5, "politeness": 0.6, "sarcasm-headlines": 0.6, "irony-tweets": 0.6, "real-en": 0.4, "real-hi": 0.8,
+          "formality": 0.5, "politeness": 0.6, "sarcasm-headlines": 0.6, "irony-tweets": 0.6, "real-en": 0.5,
           "real-long": 0.5}} if ROUND3 else {{}}
 if REAL: V2 = True                                         # keeps the v2 data (topic-in-chat) and loss
 NAME = "emojet-v1-mini" if MINI else ("emojet-v2" if V2 else "emojet-v1")
@@ -157,15 +161,27 @@ def lex_ids(text, lang):
         out += [i for i in emoji_ids(s) if i not in out]
     return out[:4]
 def mix(gold=(), silver=(), topic=()):
-    # one soft target: emojis the writer typed (1.0), the labeller's (0.5), the words' meanings (0.4); sums to 1
-    w = {}
-    for ids, v in ((gold, 1.0), (silver, 0.5), (topic, 0.4)):
-        for i in ids or ():
-            w[i] = max(w.get(i, 0.0), v)
-    if not w:
+    # One soft target. What the writer typed keeps >= 60% (labeller's extra emojis 20%, the words' meanings 20%):
+    # round 3 let 3 meaning emojis outweigh 1 typed emoji and lost 2-3 points on real messages.
+    # Without typed emojis: labeller 60%, meanings 40%.
+    gold = list(dict.fromkeys(gold or ()))[:6]
+    silver = [i for i in dict.fromkeys(silver or ()) if i not in gold][:4]
+    topic = [i for i in dict.fromkeys(topic or ()) if i not in gold and i not in silver][:4]
+    if gold:
+        parts = [(silver, 0.2), (topic, 0.2)]
+        parts = [(g, sh) for g, sh in parts if g]
+        parts = [(gold, 1.0 - sum(sh for _, sh in parts))] + parts
+    else:
+        parts = [(g, sh) for g, sh in ((silver, 0.6), (topic, 0.4)) if g]
+        tot = sum(sh for _, sh in parts)
+        parts = [(g, sh / tot) for g, sh in parts]
+    if not parts:
         return None, None
-    ids = list(w)[:8]; tot = sum(w[i] for i in ids)
-    return ids, [w[i] / tot for i in ids]
+    ids, p = [], []
+    for g, sh in parts:
+        for i in g:
+            ids.append(i); p.append(sh / len(g))
+    return ids, p
 VARY = [("chh", "ch"), ("cch", "chh"), ("ch", "chh"), ("sh", "s"), ("bh", "v"), ("v", "bh"), ("oo", "u"), ("u", "oo"),
         ("ee", "i"), ("i", "ee"), ("z", "j"), ("aa", "a"), ("ph", "f")]
 def vary(text, rnd):
@@ -180,7 +196,9 @@ def vary(text, rnd):
         if rnd.random() < 0.15: w = w + w[-1] * 2
         words[i] = w
     t = " ".join(words)
-    if rnd.random() < 0.3: t = t.lower()
+    u = rnd.random()
+    if u < 0.3: t = t.lower()
+    elif u < 0.7: t = t[:1].upper() + t[1:]          # phone keyboards capitalise the first letter ("Haga pacche")
     if rnd.random() < 0.2: t = "".join(ch for ch in t if ch not in ".!?,")
     return t
 def roman(text):
@@ -435,8 +453,11 @@ if REAL:
                         reps = 2 if (r.get("s", "").startswith("slang") and LX.find(text, r["l"])) else 1
                 else:
                     reps = 3 if (ROUND2 and r.get("s", "").startswith("slang")) else 1
-                for _ in range(reps):
-                    ex.append(x)
+                for k_ in range(reps):
+                    if ROUND3 and k_ and r["l"] in ("bn", "hi") and roman(text):
+                        ex.append({**x, "text": vary(text, vrnd)})
+                    else:
+                        ex.append(x)
     print(f"annotated examples: {len(ex) - n0:,} (+{len(ann_test):,} held out)")
     if ROUND3:      # synthetic chat lines (emojet-annotate-3): silver, never a test message
         _probe = {c["text"].strip().lower() for k in ("chat_cases", "slang_probes", "slang_negatives", "emoji_cases", "tone_cases")
@@ -737,6 +758,9 @@ def evaluate(verbose=False):
             per[c["lang"]] += a6; tot[c["lang"]] += 1
             if verbose: print(f"{'✓' if a6 else '✗'} slang {''.join(top)}   {c['text'][:50]}" + (f"  ↪ {c['reply']}" if c.get("reply") else ""))
         r["slang_hit@6"] = f"{h6}/{len(sp)}"; r["slang_hit@3"] = f"{h3}/{len(sp)}"
+        lg2 = predict([c["text"][:1].upper() + c["text"][1:] for c in sp], [c.get("reply") for c in sp])
+        hc = sum(any(norm(e) in {norm(x) for x in c["ok_emojis"]} for e in top_emojis(row)) for c, row in zip(sp, lg2))
+        r["slang_capitalised_hit@6"] = f"{hc}/{len(sp)}"      # how phones send it: "Haga pacche"
         for l in sorted(tot): r[f"slang_{l}_hit@6"] = f"{per[l]}/{tot[l]}"
     sn = evals.get("slang_negatives", [])
     if sn:
@@ -767,6 +791,7 @@ history, step, t_train = [], 0, time.time()
 baseline = None
 if V2 or RESUME:            # continuing a trained model: measure where it starts, so the end result can be compared
     baseline = evaluate(); print("starting model:", baseline, flush=True)
+t_train = time.time()       # after that evaluation: round 3 counted it as training time and planned 3x too few steps
 n_oom, crash = 0, None
 print(f"{len(ex):,} examples, {steps_per_epoch:,} steps/epoch, {EPOCHS} epochs")
 model.train()
@@ -849,12 +874,13 @@ try:                        # what got better and what got worse than the starti
             if isinstance(v, str) and "/" in v:
                 a, b_ = v.split("/"); return float(a) / max(1.0, float(b_))
             return float(v)
-        print(f"{'metric':28s} {'start':>9s} {'now':>9s}")
+        ref = REFERENCE or baseline
+        print(f"{'metric':28s} {'round 2':>9s} {'start':>9s} {'now':>9s}   (flags: now vs round 2, the shipped model)")
         for k in final:
-            if k in baseline:
-                a, b_ = _num(baseline[k]), _num(final[k])
-                flag = "  ↑" if b_ > a + 1e-9 else ("  ↓ WORSE" if b_ < a - 1e-9 else "")
-                print(f"{k:28s} {str(baseline[k]):>9s} {str(final[k]):>9s}{flag}")
+            a = _num(ref[k]) if k in ref else None
+            b_ = _num(final[k])
+            flag = "" if a is None else ("  ↑" if b_ > a + 1e-9 else ("  ↓ WORSE" if b_ < a - 1e-9 else ""))
+            print(f"{k:28s} {str(ref.get(k, '-')):>9s} {str(baseline.get(k, '-')):>9s} {str(final[k]):>9s}{flag}")
 except Exception as exc:
     print("comparison table failed:", repr(exc))
 """)

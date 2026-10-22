@@ -240,3 +240,23 @@ python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && pyt
 Attach only one model (`emojet-v2-round2`): the starting model is found by its `emojet.json`. Do not attach `emojet-slang`
 (round 2) to steps 2-3: its targets are the junk ones. After step 3: download with `scripts/kaggle.py output` (now checks
 the file size), quantize Q4_K_M, `scripts/rank_sim.py` against the baseline above, and ship only if nothing got worse.
+
+### Round 3 result (2026-10-23) and round 3b
+`emojet-v2-round3` (from round 2): slang probes **32 → 46/72** (top 3: 23 → 40), Bengali 18 → 28/44, Hindi 8 → 10/19,
+English 6 → 8/9, lookalikes 5 → 6/8, chat cases 22 → 24/40 top-1 and 30 → 33/40 top-3, emoji cases 24/24. Phone file
+(Q4_K_M): 46/72 plain, 51/72 with the app's ranking. **Not shipped**: real held-out messages got worse (Bengali top-1
+25.4 → 22.9%, top-6 62.3 → 59.7%; Hindi top-1 26.9 → 24.2%, top-6 55.4 → 53.5%), the owner's own "Haga pacche"
+(phone-capitalised) still missed, and toilet emojis leaked into ordinary Banglish ("khete jacchi" → …🚽).
+Causes: (1) the starting-model evaluation ran inside the training timer, so the run planned 29k steps (0.38 epoch) and
+stopped after 6.7 of 10 h; (2) three meaning emojis at 0.4 each outweighed one typed emoji (55% of the target);
+(3) Bengali ×2 / Hindi ×1 and replay 40-80% cut real-message exposure; (4) no capitalised copies (phones capitalise).
+
+Round 3b (`emojet-v2-round3b`, continues from round 3): timer fixed; typed emojis keep >= 60% of the target (labeller 20%,
+meanings 20%); Bengali ×3, Hindi ×2, real Hindi/Bengali not subsampled (English 50%); spelling variants also on repeated
+labelled copies, 40% of variants capitalised; new metric `slang_capitalised_hit@6`; the comparison table has a round-2
+column (the shipped model, the bar to beat). Same data kernels; start model `emojet-v2-round3`.
+```bash
+python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && python3 scripts/kaggle.py push training/kaggle/emojet_v2_round3.ipynb emojet-v2-round3b --gpu --internet \
+    --source=subhadeep3902/emojet-v2-round3 --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-tones --source=subhadeep3902/emojet-slang-3 \
+    --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2 --source=subhadeep3902/emojet-annotate-3
+```
