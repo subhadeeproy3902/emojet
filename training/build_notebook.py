@@ -415,6 +415,8 @@ if REAL:
             gold = r.get("e") or []
             silver = emoji_ids("".join(r.get("emojis", [])))
             text = html.unescape(r["t"])
+            if ROUND3 and r.get("curated") and not LX.find(text, r["l"]):
+                continue          # labelled for a word the current matcher no longer sees (e.g. Spanish "que se haga")
             if ROUND3:      # round 2 used gold OR silver: a "haga 😂" message never taught 💩. Now all of them, weighted.
                 emo, emo_p = mix(gold, silver, lex_ids(text, r["l"]))
             else:
