@@ -81,7 +81,12 @@ if ROUND3:
         rows = [json.loads(l) for l in gzip.open(path, "rt", encoding="utf-8")]
         if rows and "notes" in rows[0]:                       # round-3 format only (round 2's targets were half junk)
             targets += rows
+    n_all = len(targets)
     targets = [r for r in targets if r["t"] not in before]
+    # re-check with this matcher (it may be newer than the mining run) and drop malformed list entries ("chin;", ",,rap")
+    targets = [r for r in targets if not (not r.get("curated") and re.search(r"[;,)}({\[\]^?:\"!<>]", r["term"]))]
+    targets = [r for r in targets if not r.get("curated") or LX.find(r["t"], r["l"])]     # LX = the curated lexicon
+    log(f"round 3: {n_all:,} mined targets, {len(targets):,} after skipping labelled texts, malformed terms and re-checking")
     # round-robin over words, most useful first: curated Bengali/Hindi chat words, curated English, then swear lists.
     # So if time runs out, every word has had its share instead of the first few words taking everything.
     def prio(r):

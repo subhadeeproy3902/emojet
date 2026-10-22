@@ -25,6 +25,8 @@ BN_MARK = set("ami tumi tui amar tomar tor amra tomra korchi korbo korchis korch
               "bolchi bolchis dekhchi korish hocche hoche niye theke".split())
 HI_MARK = set("hai hain nahi nhi kya kyu kyun mera meri tera teri tum aap hum raha rahi rahe gaya gayi karo kuch bahut "
               "bohot abhi yaar mujhe tujhe hoga thi tha".split())
+# a few real messages tagged Bengali are Spanish ("que se haga justicia"): two of these words = not Banglish/Hinglish
+FOREIGN = set("que los las una del pero muy esta como cuando donde porque tambien nada todo usted ustedes".split())
 
 
 def collapse(w):
@@ -69,9 +71,11 @@ class Lexicon:
             return "bn"
         if re.search(r"[ऀ-ॿ]", text):
             return "hi"
+        words = set(TOKEN.findall(text.lower()))
+        if len(words & FOREIGN) >= 2:
+            return "xx"
         if lang in ("bn", "hi"):
             return lang
-        words = set(TOKEN.findall(text.lower()))
         b, h = len(words & BN_MARK), len(words & HI_MARK)
         return "bn" if b > h else ("hi" if h > b else (lang or "en"))
 
