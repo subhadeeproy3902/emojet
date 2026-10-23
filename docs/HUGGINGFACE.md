@@ -1,5 +1,9 @@
 # Hugging Face — what EmoJet needs from it (and what it doesn't)
 
+> **Updated 2026-10-24:** Emojet v1 is now published at
+> <https://huggingface.co/subhadeep3902/emojet>. The notes below were written while planning that, and
+> still describe how downloads and licensing work. See [RELEASE.md](RELEASE.md) for what was published.
+
 **Short answer: nothing that costs money, and for now not even an account.** The Laya models are public, not gated, Apache-2.0. Anyone (you, the app, the extension) can download them anonymously.
 
 ## What needs what
