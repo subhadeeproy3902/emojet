@@ -1,0 +1,103 @@
+name: New emoji watch
+
+# Unicode publishes new emoji roughly once a year, but the date moves and CLDR keywords
+# change in between. This checks every month, so Emojet never silently falls behind the
+# emoji keyboards people already have.
+on:
+  schedule:
+    - cron: "0 6 1 * *"      # 1st of each month, 06:00 UTC
+  workflow_dispatch:          # and on demand
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild the catalog from unicode.org + CLDR
+        run: |
+          cp labels/emoji-catalog.json /tmp/catalog-committed.json
+          rm -rf data/unicode                     # force a fresh download
+          python3 scripts/build-emoji-catalog.py
+
+      - name: Compare with the committed catalog
+        id: diff
+        run: |
+          python3 - <<'PY' | tee /tmp/report.md
+          import json, pathlib
+          old = json.loads(pathlib.Path("/tmp/catalog-committed.json").read_text(encoding="utf-8"))
+          new = json.loads(pathlib.Path("labels/emoji-catalog.json").read_text(encoding="utf-8"))
+          o = {e["e"]: e for e in old["emojis"]}
+          n = {e["e"]: e for e in new["emojis"]}
+          added   = [n[k] for k in n if k not in o]
+          removed = [o[k] for k in o if k not in n]
+          renamed = [(k, o[k]["name"], n[k]["name"]) for k in n if k in o and o[k]["name"] != n[k]["name"]]
+          kw      = [k for k in n if k in o and o[k]["kw"] != n[k]["kw"]]
+          print(f"Source: `{new['source']}`  (was `{old['source']}`)\n")
+          print(f"| | count |\n|---|---|")
+          print(f"| new emoji | {len(added)} |\n| removed | {len(removed)} |\n| renamed | {len(renamed)} |\n| keyword changes | {len(kw)} |\n")
+          if added:
+              print("### New emoji\n")
+              print("| emoji | name | group | since |\n|---|---|---|---|")
+              for e in added:
+                  print(f"| {e['e']} | {e['name']} | {e['group']} | E{e['since']} |")
+              print()
+              print("These are **not** in the model's output layer yet. To add them:")
+              print("1. merge this PR (the catalog grows from "
+                    f"{old['base_count']} to {new['base_count']} entries);")
+              print("2. run a training round — `training/build_notebook.py` detects the larger label set, "
+                    "keeps every existing output row and initialises only the new ones "
+                    "(see `docs/TRAINING.md`);")
+              print("3. publish the new weights and bump `shared/models.json` in the app repo.")
+          if removed:
+              print("\n### Removed from the Unicode list\n")
+              for e in removed:
+                  print(f"- {e['e']} {e['name']}")
+              print("\nRemoved emoji keep their output row (the app just stops suggesting them); do not renumber labels.")
+          PY
+          CHANGED=$(git diff --quiet -- labels/emoji-catalog.json && echo no || echo yes)
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          ADDED=$(python3 -c "
+          import json
+          o={e['e'] for e in json.load(open('/tmp/catalog-committed.json'))['emojis']}
+          n={e['e'] for e in json.load(open('labels/emoji-catalog.json'))['emojis']}
+          print(len(n-o))")
+          echo "added=$ADDED" >> "$GITHUB_OUTPUT"
+
+      - name: Open a pull request with the new catalog
+        if: steps.diff.outputs.changed == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="emoji-watch/$(date -u +%Y-%m)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add labels/emoji-catalog.json
+          git commit -m "Emoji catalog: ${{ steps.diff.outputs.added }} new emoji from unicode.org"
+          git push -f origin "$BRANCH"
+          gh pr create --title "Emoji catalog update ($(date -u +%Y-%m)): ${{ steps.diff.outputs.added }} new emoji" \
+                       --body-file /tmp/report.md --base main --head "$BRANCH" \
+            || gh pr edit "$BRANCH" --body-file /tmp/report.md
+
+      - name: Open an issue when the output layer has to grow
+        if: steps.diff.outputs.added != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "Retrain needed: ${{ steps.diff.outputs.added }} new emoji ($(date -u +%Y-%m))" \
+                          --body-file /tmp/report.md --label "model,emoji-catalog" \
+            || true
+
+      - name: Say nothing changed
+        if: steps.diff.outputs.changed == 'no'
+        run: echo "Catalog is up to date with unicode.org."

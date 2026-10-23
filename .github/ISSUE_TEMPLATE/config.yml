@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: EmoJet app (Android)
+    url: https://github.com/subhadeeproy3902/emojet-ai/issues
+    about: Crashes, the suggestion strip, permissions, installing the APK — report those in the app repo.
+  - name: Model card and weights
+    url: https://huggingface.co/subhadeep3902/emojet/discussions
+    about: Questions about using the weights with transformers or llama.cpp.

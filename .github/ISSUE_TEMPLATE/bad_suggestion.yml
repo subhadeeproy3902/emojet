@@ -1,0 +1,62 @@
+name: Bad emoji suggestion
+description: The model suggests the wrong emoji for a message (the most useful report there is)
+title: "Bad suggestion: "
+labels: ["model", "suggestion-quality"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One clear example is worth more than a paragraph. Everything you fill in here can
+        become a test case in `training/data/eval_sets.json`, which is how it gets fixed for good.
+  - type: textarea
+    id: message
+    attributes:
+      label: The message you typed
+      description: Exactly as typed, including capitals and spelling — both matter to the model.
+      placeholder: ghum pacche khub
+    validations:
+      required: true
+  - type: input
+    id: reply
+    attributes:
+      label: The message you were replying to (if any)
+  - type: input
+    id: got
+    attributes:
+      label: Emojis you got
+      placeholder: "😂 😅 ❤️ 😊 😮 🙂"
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Emojis a real person would send
+      placeholder: "😴 💤 🛌 🥱"
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Hindi (Devanagari)
+        - Hinglish (Hindi in English letters)
+        - Bengali (Bengali script)
+        - Banglish (Bengali in English letters)
+        - Mixed / other
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model file
+      description: From the app, Settings → Advanced, or the GGUF file name.
+      placeholder: Emojet-v1-Q4_K_M.gguf
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: This is about which emoji is suggested, not about the app's behaviour (those go to the app repo).
+          required: true

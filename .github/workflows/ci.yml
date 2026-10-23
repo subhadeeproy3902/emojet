@@ -1,0 +1,85 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Label files are valid and consistent
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          cat = json.loads(pathlib.Path("labels/emoji-catalog.json").read_text(encoding="utf-8"))
+          tones = json.loads(pathlib.Path("labels/tones.json").read_text(encoding="utf-8"))
+          emojis = [e["e"] for e in cat["emojis"]]
+          assert len(emojis) == len(set(emojis)), "duplicate emoji in the catalog"
+          assert len(emojis) == cat["base_count"], "base_count does not match the list"
+          n = len(emojis) + len(tones["tones"]) + len(tones["styles"]["options"]) + \
+              len([k for k in tones["dimensions"] if k != "note"])
+          print(f"{len(emojis)} emojis + tones/styles/axes = {n} outputs")
+          for name, v in tones["tones"].items():
+              assert "emojis" in v, f"tone {name} has no emojis"
+          PY
+
+      - name: Test cases point at emojis that exist
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          cat = {e["e"] for e in json.loads(pathlib.Path("labels/emoji-catalog.json").read_text(encoding="utf-8"))["emojis"]}
+          norm = lambda e: "".join(c for c in e if c != "️" and not 0x1F3FB <= ord(c) <= 0x1F3FF)
+          known = {norm(e) for e in cat}
+          ev = json.loads(pathlib.Path("training/data/eval_sets.json").read_text(encoding="utf-8"))
+          bad = []
+          for key, rows in ev.items():
+              for r in rows:
+                  for e in r.get("ok_emojis", []) + r.get("bad_emojis", []):
+                      if norm(e) and norm(e) not in known:
+                          bad.append((key, r.get("text", "")[:40], e))
+          assert not bad, f"test cases use unknown emojis: {bad[:10]}"
+          print({k: len(v) for k, v in ev.items()})
+          PY
+
+      - name: The chat lexicon matches its matcher
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, "training")
+          import chatlex
+          entries = json.loads(pathlib.Path("training/data/chat_lexicon.json").read_text(encoding="utf-8"))["entries"]
+          lex = chatlex.Lexicon(entries)
+          for e in entries:
+              for term in e["roman"] + e["native"]:
+                  assert lex.find(term, e["lang"]), f"lexicon entry does not match its own term: {term}"
+          ev = json.loads(pathlib.Path("training/data/eval_sets.json").read_text(encoding="utf-8"))
+          for p in ev.get("slang_negatives", []):
+              assert not lex.emojis(p["text"], p["lang"]), f"lookalike wrongly matched: {p['text']}"
+          print(f"{len(entries)} lexicon entries, all matched")
+          PY
+
+      - name: Notebook builders produce compiling notebooks
+        run: |
+          python3 training/build_notebook.py "$GITHUB_SHA" --round3
+          python3 training/build_notebook.py "$GITHUB_SHA" --round3 --smoke
+          python3 - <<'PY'
+          import ast, json, pathlib
+          for f in pathlib.Path("training/kaggle").glob("emojet_v2_round3*.ipynb"):
+              nb = json.loads(f.read_text(encoding="utf-8"))
+              ast.parse("\n".join(c["source"] for c in nb["cells"] if c["cell_type"] == "code"))
+              print("compiles:", f.name)
+          PY
+
+      - name: No secrets or large files committed
+        run: |
+          test ! -f .env || (echo ".env must never be committed" && exit 1)
+          BIG=$(git ls-files | xargs -r -d '\n' du -k 2>/dev/null | awk '$1 > 5120 {print $2}')
+          test -z "$BIG" || (echo "large files committed: $BIG" && exit 1)

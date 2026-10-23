@@ -1,0 +1,35 @@
+name: Training, data or reproduction
+description: A training run, a dataset, the notebooks, or something that does not reproduce
+title: "Training: "
+labels: ["training"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: What is this about
+      options:
+        - A training notebook fails or behaves oddly
+        - A data job (real messages, tones, slang, labelling)
+        - Adding a dataset or a language
+        - Numbers I get do not match the ones in the docs
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the Kaggle/Colab log lines around the problem, not a screenshot of them.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Commands you ran
+      render: bash
+      placeholder: python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      placeholder: Kaggle T4 / A100 / local RTX 3060
