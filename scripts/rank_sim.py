@@ -27,6 +27,11 @@ TOPIC_GROUPS = {"Animals & Nature", "Food & Drink", "Travel & Places", "Activiti
 VIBE = set("🎉🎊✨🔥💥⭐🌟💫⚡🌈🎈🎆🎇🪩") | {"⭐"}
 TOPIC_SUBS = {"face-costume", "person-role", "person-activity", "person-sport", "person-fantasy",
               "person-resting", "family", "zodiac", "religion", "warning", "transport-sign"}
+# Emojis nobody wants suggested on an ordinary message ("Brishti porche baire" -> 🖕🤬): allowed only when the
+# model itself reads the message as rude/angry/aggressive/derisive.
+OFFENSIVE = {"🖕", "🤬", "🤮", "🤢", "🍆", "🍑", "👿"}
+ANGRY_TONES = ("rude", "aggressive", "angry", "derisive")
+OFFENSIVE_MIN = 0.5
 IS_TOPIC = [(e["group"] in TOPIC_GROUPS or e["sub"] in TOPIC_SUBS) and e["e"] not in VIBE for e in cat]
 E_INDEX = {e: i for i, e in enumerate(EMOJIS)}
 TONE_ROWS = {TONES.index(t): [E_INDEX[x] for x in v["emojis"] if x in E_INDEX] for t, v in tones_cfg["tones"].items()}
@@ -53,9 +58,25 @@ def scores(text):
     return v
 
 
+OFF_IDX = [i for i, e in enumerate(EMOJIS) if e in OFFENSIVE]
+ANGRY_IDX = [i for i, t in enumerate(TONES) if t in ANGRY_TONES]
+
+
+def angry(s):
+    return max((1 / (1 + math.exp(-s[NE + t])) for t in ANGRY_IDX), default=0.0)
+
+
+def guard(adj, s):
+    """Drop 🖕🤬… unless the model reads the message itself as rude/angry."""
+    if angry(s) < OFFENSIVE_MIN:
+        for i in OFF_IDX:
+            adj[i] = -1e9
+    return adj
+
+
 def plain(draft, reply=None):
     s = scores(fmt(draft, reply))
-    return sorted(range(NE), key=lambda i: -s[i])[:6], s
+    return sorted(range(NE), key=lambda i: -guard(list(s[:NE]), s)[i])[:6], s
 
 
 def pooled(draft, reply=None):
@@ -79,7 +100,7 @@ def pooled(draft, reply=None):
     topic = sorted((i for i in range(NE) if IS_TOPIC[i] and lp[i] >= best - TOPIC_WINDOW), key=lambda i: -lp[i])[:MAX_TOPIC]
     for i in topic:
         adj[i] += TOPIC_BONUS
-    return sorted(range(NE), key=lambda i: -adj[i])[:6], s
+    return sorted(range(NE), key=lambda i: -guard(adj, s)[i])[:6], s
 
 
 def norm(e):

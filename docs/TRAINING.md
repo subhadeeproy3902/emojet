@@ -275,3 +275,27 @@ python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && pyt
 python3 scripts/kaggle.py push training/kaggle/emojet_soup.ipynb emojet-v2-soup --gpu --internet \
     --source=subhadeep3902/emojet-v2-round2 --source=subhadeep3902/emojet-v2-round3b --source=subhadeep3902/emojet-data
 ```
+
+### Soup result (2026-10-24): shipped as Emojet-v3, and what is still broken
+Second soup run (gate: paired McNemar per language, a drop blocks only if >2 points or p<0.05, plus a required slang win).
+Blend **alpha 0.5** passed and is shipped as `models/Emojet-v3-Q4_K_M.gguf` (sha256 b255d653…). 0.6-1.0 all failed on
+statistically real drops (0.7: en hit@6 p=0.010, bn hit@6 p=0.044; 1.0: bn hit@6 −3.5 pt p<0.001).
+
+Phone file (Q4_K_M) vs the previous phone model: slang probes 29 → **41/72** (bn 16 → 24, hi 7 → 9, en 6 → 8),
+hit@3 24 → 34, lookalikes 5 → **6/8**, emoji cases 22 → 23/24, chat top-3 29 → 30/40, chat top-1 22 → 21/40 (one case,
+quantization noise). Real held-out: no significant change.
+
+**Still failing — the owner's own phrases.** Short Banglish/Hinglish of the exact form he types:
+`Haga pacche` → 😂😅😮😢🤣🎉 (no 💩🚽 in any model), `Brishti porche baire` → 😂😅🤮🤬🖕, `Khide peyeche` → ❤️😊😅,
+`tatti aa rahi hai` → 😂😅🤣. Round 3b alone *does* get `Ghum pacche` → 💤😴🛌 and `Khide peyeche` → 🍛, but it is the
+variant that regresses real held-out, and the 0.5 blend dilutes those wins away.
+Two separate causes:
+1. **Too little signal for the crude words.** "haga" has 112 real messages in 2.9 M, and in most of them the writer typed
+   😂 (laughing at someone), plus ~48 synthetic lines at weight 0.5. "ghum" has 700 and works. Fix: generate far more
+   synthetic lines for the ~20 words the owner actually uses, weight them like real data, and keep the topic emoji
+   (💩🚽) as a hard target for them.
+2. **Tone is mis-read on short romanized Bengali.** "Brishti porche baire" scores rude/angry 0.93, which is why angry
+   emojis rank at all. The app-side guard (`OFFENSIVE` in `Ranker.kt` / `rank_sim.py`: 🖕🤬🤮🤢🍆🍑👿 suppressed unless
+   the message scores rude/aggressive/angry/derisive ≥ 0.5) removes them when the tone is read correctly
+   (`tatti aa rahi hai` is clean now) but cannot help when the tone itself is wrong. Fix: tone training data for short
+   romanized Bengali (the tone sets are English-heavy).
