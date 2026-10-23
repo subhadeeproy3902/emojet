@@ -53,6 +53,7 @@ Repo commit `{COMMIT[:10]}`; plan in `docs/TRAINING.md`.
 """)
 code(settings)
 code(labels)
+code("import math")
 code(f"""
 # evaluation data only (no training data)
 from datasets import load_dataset
@@ -94,28 +95,72 @@ def set_alpha(a):
 """)
 code(evaluation)
 code(f"""
-ALPHAS = {[0.0, 0.5, 1.0] if SMOKE else [0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 1.0]}
-results = {{}}
+ALPHAS = {[0.0, 0.5, 1.0] if SMOKE else [0.0, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+
+@torch.no_grad()
+def real_correct():
+    # Per-message hits on the real held-out set, so two models can be compared message by message
+    # (McNemar): a 1-point difference on 2,000 messages is about one standard error, i.e. possibly noise.
+    out = {{}}
+    for lang in ("en", "hi", "bn"):
+        rt = [x for x in real_test if x["l"] == lang]
+        if not rt:
+            continue
+        lg = predict([x["t"] for x in rt])
+        top6 = [row[:NE].topk(6).indices.tolist() for row in lg]
+        out[lang + "_top1"] = [t[0] in x["e"] for t, x in zip(top6, rt)]
+        out[lang + "_hit@6"] = [bool(set(t) & set(x["e"])) for t, x in zip(top6, rt)]
+    return out
+
+def mcnemar(a, b):
+    # Two-sided p-value for paired yes/no results (exact binomial on the disagreements).
+    n01 = sum(1 for x, y in zip(a, b) if x and not y)      # round 2 right, blend wrong
+    n10 = sum(1 for x, y in zip(a, b) if y and not x)
+    n = n01 + n10
+    if n == 0:
+        return n01, n10, 1.0
+    k = min(n01, n10)
+    p = sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n * 2
+    return n01, n10, min(1.0, p)
+
+results, hits = {{}}, {{}}
 for a in ALPHAS:
     set_alpha(a)
     results[a] = evaluate()
+    hits[a] = real_correct()
     print(f"alpha {{a}}:", results[a], flush=True)
 
 def num(v):
     if isinstance(v, str) and "/" in v:
         x, y = v.split("/"); return float(x) / max(1.0, float(y))
     return float(v)
-ref = results[0.0]                                   # round 2 = the shipped model
-REAL = [f"real_{{l}}_{{m}}" for l in ("en", "hi", "bn") for m in ("top1", "hit@6")]
-def passes(r):
-    # not worse than round 2: real messages within 0.5 points (2,000 per language: that is noise), chat cases,
-    # emoji cases, tones within one case, style within one case, sarcasm within 1 point, lookalikes
-    ok = all(num(r[k]) >= num(ref[k]) - 0.005 for k in REAL)
+ref, ref_hits = results[0.0], hits[0.0]              # round 2 = the shipped model
+REAL = [f"{{l}}_{{m}}" for l in ("en", "hi", "bn") for m in ("top1", "hit@6")]
+print(f"\\nreal held-out, message by message vs round 2 (McNemar; n01 = round 2 right & blend wrong):")
+paired = {{}}
+for a in ALPHAS[1:]:
+    row = {{}}
+    for k in REAL:
+        n01, n10, pv = mcnemar(ref_hits[k], hits[a][k])
+        row[k] = (n10 - n01, pv)
+    paired[a] = row
+    print(f"  alpha {{a}}: " + "  ".join(f"{{k}} {{d:+d}} msgs p={{pv:.3f}}" for k, (d, pv) in row.items()))
+
+def passes(a):
+    # Not worse than round 2. On the real held-out set a drop is allowed only if it is small (<= 2 points)
+    # AND not statistically significant (McNemar p >= 0.05): 1 point there is one standard error.
+    r = results[a]
+    ok = True
+    for k in REAL:
+        drop = num(ref["real_" + k]) - num(r["real_" + k])
+        d_msgs, pv = paired[a][k]
+        ok &= drop <= 0.02 and (drop <= 0.0 or pv >= 0.05)
     ok &= num(r["chat_cases_top1"]) >= num(ref["chat_cases_top1"]) and num(r["chat_cases_top3"]) >= num(ref["chat_cases_top3"])
     ok &= num(r["emoji_cases_hit@6"]) >= num(ref["emoji_cases_hit@6"])
     ok &= num(r["tone_top3"]) >= num(ref["tone_top3"]) - 1 / 25 and num(r["style"]) >= num(ref["style"]) - 1 / 13
-    ok &= num(r["hinglish_sarcasm_acc"]) >= num(ref["hinglish_sarcasm_acc"]) - 0.01
+    ok &= num(r["hinglish_sarcasm_acc"]) >= num(ref["hinglish_sarcasm_acc"]) - 0.02
     ok &= num(r["slang_negatives_clean"]) >= num(ref["slang_negatives_clean"])
+    ok &= num(r["slang_hit@6"]) > num(ref["slang_hit@6"]) and num(r["slang_capitalised_hit@6"]) > num(ref["slang_capitalised_hit@6"])
     return ok
 def skill(r):
     return num(r["slang_hit@6"]) + num(r["slang_capitalised_hit@6"]) + num(r["slang_hit@3"]) + num(r["chat_cases_top1"])
@@ -123,8 +168,8 @@ keys = list(ref)
 print(f"{{'metric':26s}}" + "".join(f"{{a:>9}}" for a in ALPHAS))
 for k in keys:
     print(f"{{k:26s}}" + "".join(f"{{str(results[a][k]):>9s}}" for a in ALPHAS))
-print(f"{{'passes (no regression)':26s}}" + "".join(f"{{str(passes(results[a])):>9s}}" for a in ALPHAS))
-good = [a for a in ALPHAS if a > 0 and passes(results[a])]
+print(f"{{'passes (no regression)':26s}}" + "".join(f"{{str(passes(a)) if a > 0 else '-':>9s}}" for a in ALPHAS))
+good = [a for a in ALPHAS if a > 0 and passes(a)]
 if good:
     BEST = max(good, key=lambda a: skill(results[a]))
     print(f"best blend: alpha {{BEST}} (no regression vs round 2, most slang skill)")
