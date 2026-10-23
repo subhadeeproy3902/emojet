@@ -260,3 +260,18 @@ python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && pyt
     --source=subhadeep3902/emojet-v2-round3 --source=subhadeep3902/emojet-data --source=subhadeep3902/emojet-tones --source=subhadeep3902/emojet-slang-3 \
     --source=subhadeep3902/emojet-annotate --source=subhadeep3902/emojet-annotate-2 --source=subhadeep3902/emojet-annotate-3
 ```
+
+### Round 3b result (2026-10-23) and the model soup
+`emojet-v2-round3b` (from round 3, 9.2 h, 41k steps): slang probes 49/72 (top 3: 44/72), capitalised 44/72, Hindi probes
+13/19, chat cases 25/40 top-1, 32/40 top-3. Real held-out still below round 2 (Bengali top-1 23.2% vs 25.4%, top-6 58.7%
+vs 62.3%; Hindi top-1 24.3% vs 26.9%): teaching chat-word meanings costs a little on reviews/comments/tweets, which is
+what the real held-out set mostly is. Not shipped as is.
+
+Next: `training/build_soup.py` blends round 2 and round 3b weights (WiSE-FT) at a = 0, 0.3 … 0.7, 1, evaluates each blend
+with the training evaluation, and saves the best blend with no regression vs round 2 (real held-out within 0.5 point,
+chat/emoji cases, tones, style, sarcasm, lookalikes) and the most slang skill. ~40 min GPU.
+```bash
+python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3 && python3 training/build_soup.py $(git rev-parse --short HEAD) && \
+python3 scripts/kaggle.py push training/kaggle/emojet_soup.ipynb emojet-v2-soup --gpu --internet \
+    --source=subhadeep3902/emojet-v2-round2 --source=subhadeep3902/emojet-v2-round3b --source=subhadeep3902/emojet-data
+```
