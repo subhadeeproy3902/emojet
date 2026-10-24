@@ -179,6 +179,41 @@ one epoch isn't enough exposure to a few hundred examples inside a 50k-message t
 either more epochs on the slang data specifically, or oversampling it harder than ×3. Not re-run yet — flagged
 for the owner to decide whether it's worth another round before release.
 
+## Hyperparameters (the shipped v1)
+
+Everything below lives in `training/build_notebook.py` and is baked into the generated notebook, so a run is
+reproducible from a commit hash. These are the values used for the released model.
+
+| | Value | Why |
+|---|---|---|
+| Base | `convaiinnovations/laya` @ `7b928d8` | ModernBERT-large encoder, Apache-2.0 |
+| Head | 1024 → 2002 linear, mean pooling | 1,923 emojis + 65 tones + 8 styles + 6 axes |
+| Parameters | 397.9 M | |
+| `MAX_LEN` | 256 tokens | the app clips long drafts head + tail to 900 chars |
+| `BATCH` | 64, capped at 3,584 tokens per batch | 5,120 ran out of memory on a T4 |
+| `LR_ENCODER` / `LR_HEAD` | 2e-5 / 1.5e-4 (v2), **1e-5 / 8e-5** when continuing a trained model | gentler steps when refining |
+| `WARMUP` | 0.03 (0.02 when continuing) | |
+| Optimiser | AdamW, weight decay 0.01, grad clip 1.0, fp16 autocast + GradScaler | |
+| Schedule | linear warmup → linear decay to 0, **refitted at step 300** to the real step rate | so the LR still reaches 0 inside the time budget |
+| `EPOCHS` / `TIME_BUDGET_H` | 2 / 10 h on one T4 | whichever comes first; the run always evaluates and saves |
+| `BALANCE_TAU` | 0.5 | balanced softmax; without it 😂❤️👍 swallow the long tail |
+| `TONE_W` / `STYLE_W` / `DIM_W` | 1.0 / 0.5 / 0.5 | emoji loss has weight 1.0 |
+| `LANG_REPEAT` | bn ×3, hi ×2, en ×1 | Bengali and Hindi data are scarcer |
+| Emoji target | soft: typed emoji ≥ 0.60, labeller 0.20, word-meaning 0.20 | a typed emoji must outweigh inferred ones |
+| Example weights | real typed emoji 1.0, LLM-labelled 0.5, synthetic 0.5 | |
+| Unpicked tones | 0.3 weak negatives | only up to 3 tones are ever picked per message |
+| Seed | 42 | |
+
+**Losses.** Emojis: soft-target cross-entropy over the 1,923 (several emojis can be right). Tones and axes:
+masked BCE — an example only trains the outputs it actually knows about. Styles: cross-entropy.
+
+**Growing the label set.** If `labels/emoji-catalog.json` gains emojis (the monthly workflow opens that PR), the
+builder detects the larger output layer, copies every existing output row across by label name and initialises only
+the new ones — so new emoji can be added without retraining from scratch.
+
+**Changing any of this:** the run prints a comparison table at the end that flags anything worse than the shipped
+model, and `training/build_soup.py` has the paired significance test. Please put that table in the PR.
+
 ## Round 3 (2026-10-22): slang and everyday Banglish/Hinglish, done properly
 
 ### Why round 2 didn't fix "Haga pacche"

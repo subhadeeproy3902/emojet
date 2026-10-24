@@ -1,6 +1,6 @@
 # Third-party notices
 
-EmoJet itself is MIT-licensed (see `LICENSE`). It uses or redistributes:
+The code in this repository is Apache-2.0 (see `LICENSE`); the trained **weights** are CC BY-NC-SA 4.0 (see the [model card](https://huggingface.co/subhadeep3902/emojet)). It uses or redistributes:
 
 ## Laya (model)
 - Source: https://huggingface.co/convaiinnovations/laya — GGUF conversion: https://huggingface.co/ggml-org/Laya-GGUF

@@ -44,8 +44,8 @@ Add rows, open a PR. Keep them realistic: things you would actually send, not di
 
 ## 4. Retrain the model (free, ~10 h on a Kaggle T4)
 
-Read [`docs/TRAINING.md`](docs/TRAINING.md) — it has the full pipeline, every round that was run, and what went wrong
-in each. The short version:
+Read [`docs/TRAINING.md`](docs/TRAINING.md) — it has the full pipeline, **every hyperparameter of the shipped
+model**, every round that was run, and what went wrong in each. The short version:
 
 ```bash
 python3 training/build_notebook.py $(git rev-parse --short HEAD) --round3   # builds the notebook
